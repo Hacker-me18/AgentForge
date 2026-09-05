@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+.venv/
+
+# App data / artifacts
+data/*.db
+data/artifacts/
+.env
+
+# Node
+node_modules/
+apps/web/dist/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
