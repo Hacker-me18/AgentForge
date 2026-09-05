@@ -7,13 +7,13 @@
 - [ ] 前端 dev server 可启动并展示左侧导航（推迟到 Phase H npm install 后验证）
 
 ## Phase B Runtime
-- [ ] AgentState 字段完整（run_id/agent_id/task/messages/context/tool_results/observations/memory/step/token_usage/cost/status）
-- [ ] AgentHarness 七个接口方法实现且不含业务逻辑
-- [ ] 执行循环支持 max_steps / timeout / retry / cancellation / checkpoint / resume / failure handling
-- [ ] Mock LLM + Mock Tool 端到端测试通过
-- [ ] 工具首次失败 → 重试成功，Trace 可见 Attempt1 FAILED / Attempt2 SUCCESS
-- [ ] 超过 max_steps 时以 BUDGET_EXCEEDED 终止
-- [ ] LLMFactory 按配置创建 DeepSeek / OpenAI / OpenAI-compatible / Mock provider，切换无需改 Runtime
+- [x] AgentState 字段完整（run_id/agent_id/task/messages/context/tool_results/observations/memory/step/token_usage/cost/status）
+- [x] AgentHarness 七个接口方法实现且不含业务逻辑
+- [x] 执行循环支持 max_steps / timeout / retry / cancellation / checkpoint / resume / failure handling
+- [x] Mock LLM + Mock Tool 端到端测试通过
+- [x] 工具首次失败 → 重试成功，observations 可见 FAILED→SUCCESS（Trace 展示在 Phase F 验证）
+- [x] 超过 max_steps 时以 BUDGET_EXCEEDED 终止
+- [x] LLMFactory 按配置创建 DeepSeek / OpenAI / OpenAI-compatible / Mock provider，切换无需改 Runtime
 
 ## Phase C Tool / MCP
 - [ ] Tool Registry 元数据完整（name/description/schema/risk_level/timeout/cost/permission）

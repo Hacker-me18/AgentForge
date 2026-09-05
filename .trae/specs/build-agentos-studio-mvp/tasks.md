@@ -9,13 +9,13 @@
   - [x] 1.4 配置 pytest / ruff / mypy / pre-commit，建立 Architecture Decision Record（docs/adr/）
   - [x] 1.5 验证：后端 pytest 与 ruff 通过（前端 dev server 验证推迟到 Phase H npm install 后）
 
-- [ ] Task 2: Phase B — Agent Runtime 核心
-  - [ ] 2.1 定义 AgentState（run_id/agent_id/task/messages/context/tool_results/observations/memory/step/token_usage/cost/status）
-  - [ ] 2.2 实现 AgentHarness 接口（prepare/build_context/resolve_tools/check_policy/execute/observe/finalize）
-  - [ ] 2.3 实现 AgentRuntime 执行循环：max_steps、timeout、retry、cancellation、failure handling
-  - [ ] 2.4 实现 Checkpoint 持久化与 resume（SQLite）
-  - [ ] 2.5 实现 LLMProvider 接口 + LLMFactory（DeepSeek / OpenAI / OpenAI-compatible / Mock，按 LLM_PROVIDER 配置创建）
-  - [ ] 2.6 验证：Mock LLM + Mock Tool 端到端跑通；失败重试、预算停止（BUDGET_EXCEEDED）测试通过
+- [x] Task 2: Phase B — Agent Runtime 核心
+  - [x] 2.1 定义 AgentState（run_id/agent_id/task/messages/context/tool_results/observations/memory/step/token_usage/cost/status）
+  - [x] 2.2 实现 AgentHarness 接口（prepare/build_context/resolve_tools/check_policy/execute/observe/finalize）
+  - [x] 2.3 实现 AgentRuntime 执行循环：max_steps、timeout、retry、cancellation、failure handling
+  - [x] 2.4 实现 Checkpoint 持久化与 resume（SQLite）
+  - [x] 2.5 实现 LLMProvider 接口 + LLMFactory（DeepSeek / OpenAI / OpenAI-compatible / Mock，按 LLM_PROVIDER 配置创建）
+  - [x] 2.6 验证：Mock LLM + Mock Tool 端到端跑通；失败重试、预算停止（BUDGET_EXCEEDED）测试通过（8 passed）
 
 - [ ] Task 3: Phase C — Tool Registry / Gateway / MCP
   - [ ] 3.1 定义 Tool 接口与 Tool Registry（name/description/schema/risk_level/timeout/cost/permission）

@@ -1,4 +1,4 @@
-name: agentos
+name: agentforge
 channels:
   - defaults
 dependencies:
