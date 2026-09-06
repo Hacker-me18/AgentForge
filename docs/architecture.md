@@ -1,10 +1,10 @@
 # AgentOS Studio — Architecture
 
-AgentOS Studio is a **layered, provider-agnostic agent runtime and evaluation
-platform**. Each capability lives in its own `packages/*` module and is composed
-at runtime by the FastAPI service and by the offline evaluation runner — the
-*exact same* components run a live Studio run, a seeded demo run, and an
-offline evaluation case. Nothing is mocked at the orchestration layer.
+AgentOS Studio is a layered, provider-agnostic agent runtime and evaluation
+platform. Each capability lives in its own `packages/*` module and is composed
+at runtime by the FastAPI service and by the offline evaluation runner: a live
+Studio run, a seeded demo run, and an offline evaluation case all execute the
+same components.
 
 ```mermaid
 flowchart LR
@@ -192,6 +192,6 @@ flowchart LR
     RUNNER2["run_ab(control, treatment)"] --> AB["A/B report (per-dimension Δ)"]
 ```
 
-The results are deterministic (mock LLM), so `POST /api/eval/report/eval/run`
-re-produces identical reports — evaluation is a first-class, reproducible
-artifact, not a one-off script.
+The default mock LLM is deterministic, so re-running the report endpoints
+(`/api/eval/report/eval/run`, `/api/eval/report/ab/run`) reproduces identical
+results, which keeps evaluation output comparable between runs.

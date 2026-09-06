@@ -1,4 +1,4 @@
-"""Phase G tests: dataset integrity, evaluation runner, dimensions and A/B."""
+"""Tests for evaluation: dataset integrity, runner, dimensions and A/B."""
 
 from packages.evaluation.dataset import Case, Dataset
 from packages.evaluation.experiment import run_ab

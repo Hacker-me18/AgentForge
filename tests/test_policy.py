@@ -1,4 +1,4 @@
-"""Phase E tests: policy engine, budget control and human approval."""
+"""Tests for the policy engine, budget control and human approval."""
 
 import asyncio
 import uuid

@@ -41,7 +41,7 @@ class ToolGateway:
         return self.registry.schemas()
 
     def check_policy(self, name: str, metadata: ToolMetadata, arguments: dict) -> str:
-        # Phase E plugs in the real policy engine; default is allow.
+        # If no policy checker is installed, everything is allowed by default.
         if self.policy_checker is None:
             return "allow"
         return self.policy_checker(name, metadata, arguments)

@@ -1,4 +1,4 @@
-"""Phase G: evaluation datasets, per-case scoring and offline A/B tests."""
+"""Evaluation: case datasets, per-case scoring, reports and offline A/B tests."""
 
 from packages.evaluation.dataset import Case, Dataset
 from packages.evaluation.experiment import ABReport, run_ab

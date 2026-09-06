@@ -1,4 +1,4 @@
-"""Tests for Phase D: Docker sandbox execution.
+"""Tests for the Docker sandbox execution path.
 
 These tests require a running Docker daemon and the ``agentos-sandbox:0.1``
 image (see ``docker/sandbox.Dockerfile``). When Docker is unavailable the

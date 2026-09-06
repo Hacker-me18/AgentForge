@@ -1,4 +1,4 @@
-"""Phase D: Docker sandbox for isolated, resource-limited code execution."""
+"""Docker sandbox for isolated, resource-limited code execution."""
 
 from packages.sandbox.collector import ArtifactCollector
 from packages.sandbox.executor import (

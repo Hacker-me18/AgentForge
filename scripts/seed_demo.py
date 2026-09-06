@@ -1,4 +1,4 @@
-"""Seed the Studio with real demo data (Phase I quickstart).
+"""Seed the local Studio database with a deterministic example dataset.
 
 Deletes ``data/agentos.db`` and runs a curated set of tasks through the same
 composition the API uses (registry + gateway + harness + runtime + budget +

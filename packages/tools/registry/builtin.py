@@ -1,9 +1,9 @@
 """Built-in local tools shipped with the platform.
 
 All tools are registered via :func:`create_default_registry`. Shell execution
-is CRITICAL risk and effectively disabled by default policy (Phase E will
-enforce it); ``python.execute`` runs inside the Phase D Docker sandbox
-(``agentos-sandbox`` image) with network disabled and resource limits.
+is CRITICAL risk and is denied by the default policy; ``python.execute`` runs
+inside the Docker sandbox (``agentos-sandbox`` image) with network disabled and
+resource limits.
 """
 
 import ast
@@ -296,7 +296,7 @@ def _database_write(arguments: dict, state: Any = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# shell.execute: CRITICAL, denied by default policy (Phase E)
+# shell.execute: CRITICAL risk, denied by the default policy
 # ---------------------------------------------------------------------------
 
 
@@ -305,14 +305,14 @@ def _shell_execute(arguments: dict, state: Any = None) -> dict:
         "status": "denied",
         "message": (
             "shell.execute is CRITICAL risk and is DENIED by the default "
-            "policy; Phase E approval flow is required to enable it."
+            "policy; enabling it requires an explicit policy rule."
         ),
         "command": arguments.get("command", ""),
     }
 
 
 # ---------------------------------------------------------------------------
-# python.execute: Docker sandbox execution (Phase D)
+# python.execute: Docker sandbox execution
 # ---------------------------------------------------------------------------
 
 

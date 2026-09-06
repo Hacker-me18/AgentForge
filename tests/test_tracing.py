@@ -1,4 +1,4 @@
-"""Phase F tests: event store, trace building, cost summary and runs API."""
+"""Tests for tracing: event store, trace building, cost summary and runs API."""
 
 import asyncio
 

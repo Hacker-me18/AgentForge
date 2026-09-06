@@ -1,4 +1,4 @@
-"""Standalone evaluation entry point (tasks.md 7.5: runs without a server).
+"""Standalone evaluation entry point (runs without a server).
 
 Runs the research dataset offline with a deterministic mock LLM by default,
 prints a markdown report and optionally writes it to ``data/eval/``. With

@@ -22,3 +22,7 @@ apps/web/dist/
 .DS_Store
 Thumbs.db
 .idea/
+
+# Internal build specs / planning docs (not published)
+.trae/
+docs/AgentOS_Studio_GitHub*

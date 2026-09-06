@@ -1,8 +1,8 @@
 """Evaluation dimensions: turn one executed case into 0..1 metric scores.
 
 A single executed case is captured in :class:`RunResult` (state + flat events +
-reconstructed trace). :func:`score_metrics` then produces the seven Phase G
-dimensions defined in tasks.md 7.3:
+reconstructed trace). :func:`score_metrics` then produces the seven scoring
+dimensions:
 
 ``task_success`` ``tool_selection`` ``evidence`` ``policy`` ``latency``
 ``cost`` ``steps``
