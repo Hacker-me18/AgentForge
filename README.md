@@ -224,7 +224,7 @@ docker/                 sandbox Dockerfile
 
 ## License
 
-[MIT](LICENSE) © 2026 贺朝晖 (Hacker-me18)
+[MIT](LICENSE) © 2026 hzh
 
 ---
 
