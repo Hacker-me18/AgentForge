@@ -1,11 +1,16 @@
 """Agent runtime execution loop."""
 
 import time
+from collections.abc import Awaitable, Callable
 
 from packages.llm.base import LLMResponse, ToolCall
+from packages.policy.budget import Budget
 from packages.runtime.checkpoint import CheckpointStore
 from packages.runtime.harness import AgentHarness
 from packages.runtime.state import AgentState, RunStatus
+
+# Asks a human (or test stub) whether a tool call may proceed.
+ApprovalHandler = Callable[[str, str, dict], Awaitable[bool]]
 
 # USD per 1M tokens: (input, output)
 MODEL_PRICING: dict[str, tuple[float, float]] = {
@@ -23,12 +28,16 @@ class AgentRuntime:
         max_steps: int = 16,
         timeout: float = 120.0,
         max_retries: int = 2,
+        approval_handler: ApprovalHandler | None = None,
+        budget: Budget | None = None,
     ):
         self.harness = harness
         self.checkpoint = checkpoint
         self.max_steps = max_steps
         self.timeout = timeout
         self.max_retries = max_retries
+        self.approval_handler = approval_handler
+        self.budget = budget
         self._cancel_requests: set[str] = set()
 
     def cancel(self, run_id: str) -> None:
@@ -37,20 +46,31 @@ class AgentRuntime:
     async def run(self, state: AgentState) -> AgentState:
         state.status = RunStatus.RUNNING
         self.harness.emit("run_started", {"run_id": state.run_id})
-        deadline = time.monotonic() + self.timeout
+        started_at = time.monotonic()
+        deadline = started_at + self.timeout
+        max_steps = (
+            self.budget.max_steps
+            if self.budget is not None and self.budget.max_steps is not None
+            else self.max_steps
+        )
 
         try:
             while True:
                 if state.run_id in self._cancel_requests:
                     state.status = RunStatus.CANCELLED
                     break
-                if state.step >= self.max_steps:
+                if state.step >= max_steps:
                     state.status = RunStatus.BUDGET_EXCEEDED
-                    state.error = f"max_steps ({self.max_steps}) reached"
+                    state.error = f"step budget exceeded ({state.step}/{max_steps})"
                     break
                 if time.monotonic() > deadline:
                     state.status = RunStatus.FAILED
                     state.error = "timeout"
+                    break
+                budget_reason = self._check_budget(state, started_at)
+                if budget_reason is not None:
+                    state.status = RunStatus.BUDGET_EXCEEDED
+                    state.error = budget_reason
                     break
 
                 context = await self.harness.build_context(state)
@@ -84,7 +104,20 @@ class AgentRuntime:
                     decision = await self.harness.check_policy(
                         {"tool": call.name, "arguments": call.arguments}
                     )
-                    if decision != "allow":
+                    if decision == "require_approval":
+                        approved = await self._request_approval(state, call)
+                        if not approved:
+                            await self.harness.observe(
+                                state,
+                                {
+                                    "tool_call_id": call.id,
+                                    "tool": call.name,
+                                    "status": "blocked",
+                                    "error": "approval rejected",
+                                },
+                            )
+                            continue
+                    elif decision != "allow":
                         await self.harness.observe(
                             state,
                             {
@@ -104,6 +137,41 @@ class AgentRuntime:
             state.error = str(exc)
 
         return await self._finish(state)
+
+    def _check_budget(self, state: AgentState, started_at: float) -> str | None:
+        if self.budget is None:
+            return None
+        tokens = state.token_usage.get("input", 0) + state.token_usage.get("output", 0)
+        return self.budget.exceeded(
+            step=state.step,
+            tokens=tokens,
+            cost=state.cost,
+            elapsed_s=time.monotonic() - started_at,
+        )
+
+    async def _request_approval(self, state: AgentState, call: ToolCall) -> bool:
+        """Pause the run and wait for a human approval decision."""
+        state.status = RunStatus.WAITING_APPROVAL
+        self.harness.emit(
+            "approval_requested",
+            {"run_id": state.run_id, "tool": call.name, "arguments": call.arguments},
+        )
+        try:
+            if self.approval_handler is None:
+                self.harness.emit(
+                    "approval_decided",
+                    {"run_id": state.run_id, "tool": call.name, "approved": False},
+                )
+                return False
+            approved = await self.approval_handler(call.id, call.name, call.arguments)
+            self.harness.emit(
+                "approval_decided",
+                {"run_id": state.run_id, "tool": call.name, "approved": approved},
+            )
+            return approved
+        finally:
+            if state.status == RunStatus.WAITING_APPROVAL:
+                state.status = RunStatus.RUNNING
 
     async def _execute_with_retry(self, state: AgentState, call: ToolCall) -> bool:
         last_error = ""

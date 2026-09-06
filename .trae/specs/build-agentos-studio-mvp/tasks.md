@@ -28,11 +28,11 @@
   - [x] 4.2 实现 ResourceLimits（network disabled、timeout 30s、512MB、1 CPU、每轮全新临时目录）与 ArtifactCollector
   - [x] 4.3 验证：python.execute 成功返回 artifacts；timeout / 内存超限 / 网络禁用 / 非法代码测试通过（8 项真实 Docker 测试全绿）
 
-- [ ] Task 5: Phase E — Policy Engine 与审批
-  - [ ] 5.1 实现 PolicyEngine：Rule / RiskLevel / ALLOW / DENY / REQUIRE_APPROVAL
-  - [ ] 5.2 实现 Budget Control（max_steps/max_tokens/max_cost/max_latency，超限 STOP）
-  - [ ] 5.3 实现 Approval 模型与 API（审批请求创建、Approve/Reject、审计留痕、运行暂停/恢复）
-  - [ ] 5.4 验证：ALLOW/DENY/APPROVAL 三种路径测试通过；database.write 触发审批流
+- [x] Task 5: Phase E — Policy Engine 与审批
+  - [x] 5.1 实现 PolicyEngine：Rule / RiskLevel / ALLOW / DENY / REQUIRE_APPROVAL
+  - [x] 5.2 实现 Budget Control（max_steps/max_tokens/max_cost/max_latency，超限 STOP）
+  - [x] 5.3 实现 Approval 模型与 API（审批请求创建、Approve/Reject、审计留痕、运行暂停/恢复）
+  - [x] 5.4 验证：ALLOW/DENY/APPROVAL 三种路径测试通过；database.write 触发审批流（11 项 policy 测试通过）
 
 - [ ] Task 6: Phase F — Event / Trace / Cost
   - [ ] 6.1 实现统一 Event 模型（id/run_id/type/timestamp/sequence/payload）与 EventBus / EventStore

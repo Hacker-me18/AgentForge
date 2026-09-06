@@ -10,6 +10,7 @@ from collections.abc import Callable
 from typing import Any, Protocol
 
 from packages.llm.base import LLMProvider, ToolCall
+from packages.policy.engine import PolicyEngine
 from packages.runtime.state import AgentState, RunStatus
 
 EventRecorder = Callable[[str, dict], None]
@@ -28,11 +29,13 @@ class AgentHarness:
         tool_gateway: ToolGateway | None = None,
         context_engine: Any | None = None,
         event_recorder: EventRecorder | None = None,
+        policy_engine: PolicyEngine | None = None,
     ):
         self.llm = llm
         self.tool_gateway = tool_gateway
         self.context_engine = context_engine
         self.event_recorder = event_recorder
+        self.policy_engine = policy_engine
 
     def emit(self, event: str, payload: dict) -> None:
         if self.event_recorder is not None:
@@ -70,7 +73,8 @@ class AgentHarness:
         return self.tool_gateway.schemas()
 
     async def check_policy(self, action: dict) -> str:
-        # Phase E will plug in the real policy engine; default is allow.
+        if self.policy_engine is not None:
+            return self.policy_engine.check(action["tool"]).value
         return "allow"
 
     async def execute(self, state: AgentState, tool_call: ToolCall) -> dict:

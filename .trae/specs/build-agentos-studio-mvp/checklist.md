@@ -27,9 +27,9 @@
 - [x] artifacts（图片/json）可收集并返回（matplotlib png 测试通过）
 
 ## Phase E Policy
-- [ ] ALLOW / DENY / REQUIRE_APPROVAL 三种动作测试通过
-- [ ] Budget（max_steps/max_tokens/max_cost/max_latency）超限即 STOP
-- [ ] database.write 触发审批：UI 卡片 Approve 继续 / Reject 终止，全程审计留痕
+- [x] ALLOW / DENY / REQUIRE_APPROVAL 三种动作测试通过
+- [x] Budget（max_steps/max_tokens/max_cost/max_latency）超限即 STOP
+- [x] database.write 触发审批：运行暂停 WAITING_APPROVAL → Approve 继续 / Reject 终止，SQLite 审计留痕（UI 卡片在 Phase H 验证）
 
 ## Phase F Trace
 - [ ] Event 模型统一（id/run_id/type/timestamp/sequence/payload），覆盖 spec 列出的全部事件类型
