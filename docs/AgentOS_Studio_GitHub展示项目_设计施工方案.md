@@ -1,7 +1,7 @@
 # AgentOS Studio
 ## Agent Runtime & Evaluation Platform
 >
-> 核心目标：做一个“看起来像真实 Agent Infrastructure 产品、能够完整 Demo、架构有深度、代码可快速 Vibe Coding、截图和文档专业”的。
+> 核心目标：Agent Infrastructure 产品。
 >
 > 推荐名称：**AgentOS Studio**
 >
