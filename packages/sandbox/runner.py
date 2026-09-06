@@ -54,9 +54,7 @@ class SandboxRunner:
             },
         )
         try:
-            result = await self.executor.execute(
-                code, limits=limits, artifacts_dir=artifacts_dir
-            )
+            result = await self.executor.execute(code, limits=limits, artifacts_dir=artifacts_dir)
         except Exception as exc:
             self._emit("sandbox.failed", {"image": image, "error": str(exc)})
             raise

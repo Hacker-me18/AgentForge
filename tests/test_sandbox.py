@@ -96,7 +96,9 @@ async def test_sandbox_collects_matplotlib_artifact(tmp_path) -> None:
 async def test_sandbox_timeout(tmp_path) -> None:
     runner = SandboxRunner()
     limits = ResourceLimits(timeout_s=3)
-    result = await runner.run("import time; time.sleep(60)", limits=limits, artifacts_dir=str(tmp_path))
+    result = await runner.run(
+        "import time; time.sleep(60)", limits=limits, artifacts_dir=str(tmp_path)
+    )
     assert result.status == "timeout"
 
 
@@ -108,9 +110,7 @@ async def test_sandbox_timeout(tmp_path) -> None:
 async def test_sandbox_network_disabled(tmp_path) -> None:
     runner = SandboxRunner()
     code = (
-        "import socket\n"
-        "socket.create_connection(('8.8.8.8', 53), timeout=5)\n"
-        "print('connected')\n"
+        "import socket\nsocket.create_connection(('8.8.8.8', 53), timeout=5)\nprint('connected')\n"
     )
     result = await runner.run(code, artifacts_dir=str(tmp_path))
     assert result.status != "success"

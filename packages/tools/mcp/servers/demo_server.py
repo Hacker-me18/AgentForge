@@ -9,10 +9,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from packages.tools.mcp.server import MCPServer  # noqa: E402
 
 _SEARCH_INDEX = [
-    {"title": "PostgreSQL vs MySQL", "url": "https://mcp.example.com/pg-vs-mysql",
-     "snippet": "PostgreSQL: advanced SQL & JSONB; MySQL: simple read-heavy speed."},
-    {"title": "MCP protocol basics", "url": "https://mcp.example.com/mcp-basics",
-     "snippet": "JSON-RPC 2.0 over stdio or HTTP; tools/list and tools/call."},
+    {
+        "title": "PostgreSQL vs MySQL",
+        "url": "https://mcp.example.com/pg-vs-mysql",
+        "snippet": "PostgreSQL: advanced SQL & JSONB; MySQL: simple read-heavy speed.",
+    },
+    {
+        "title": "MCP protocol basics",
+        "url": "https://mcp.example.com/mcp-basics",
+        "snippet": "JSON-RPC 2.0 over stdio or HTTP; tools/list and tools/call.",
+    },
 ]
 
 _FAKE_FS = {

@@ -1,6 +1,7 @@
 """Phase E tests: policy engine, budget control and human approval."""
 
 import asyncio
+import uuid
 
 from httpx import ASGITransport, AsyncClient
 
@@ -10,7 +11,7 @@ from packages.llm.providers.mock import MockLLMProvider
 from packages.policy.approval import ApprovalManager, ApprovalStore
 from packages.policy.budget import Budget
 from packages.policy.engine import PolicyEngine
-from packages.policy.models import ApprovalStatus, PolicyAction, PolicyRule
+from packages.policy.models import Approval, ApprovalStatus, PolicyAction, PolicyRule
 from packages.runtime.execution import AgentRuntime
 from packages.runtime.harness import AgentHarness
 from packages.runtime.state import RunStatus
@@ -113,34 +114,39 @@ async def test_approval_manager_approve_and_reject(tmp_path) -> None:
     store = ApprovalStore(str(tmp_path / "approvals.db"))
     manager = ApprovalManager(store)
 
-    async def decide_later(approve: bool) -> str:
-        pending = await store.list(ApprovalStatus.PENDING)
-        task = asyncio.create_task(manager.decide(pending[-1].id, approve))
-        await task
-        return pending[-1].id
+    async def wait_pending() -> Approval:
+        # Poll until the request's row commits (writes are async). Once the row
+        # is visible the waiter is guaranteed registered (see request_and_wait).
+        for _ in range(100):
+            pending = await store.list(ApprovalStatus.PENDING)
+            if pending:
+                return pending[0]
+            await asyncio.sleep(0.01)
+        raise AssertionError("approval request never became visible")
 
     # Approve path.
     waiter = asyncio.create_task(
         manager.request_and_wait(run_id="r1", tool_name="database.write", arguments={})
     )
-    await asyncio.sleep(0.05)
-    approval_id = await decide_later(True)
+    approval = await wait_pending()
+    assert approval.tool_name == "database.write"
+    await manager.decide(approval.id, approve=True)
     assert await waiter is True
-    stored = await store.get(approval_id)
+    stored = await store.get(approval.id)
     assert stored is not None and stored.status == ApprovalStatus.APPROVED
 
     # Reject path.
     waiter = asyncio.create_task(
         manager.request_and_wait(run_id="r1", tool_name="database.write", arguments={})
     )
-    await asyncio.sleep(0.05)
-    approval_id = await decide_later(False)
+    approval = await wait_pending()
+    await manager.decide(approval.id, approve=False)
     assert await waiter is False
-    stored = await store.get(approval_id)
+    stored = await store.get(approval.id)
     assert stored is not None and stored.status == ApprovalStatus.REJECTED
 
     # Second decide on decided approval is a no-op.
-    assert await manager.decide(approval_id, True) is None
+    assert await manager.decide(approval.id, True) is None
 
 
 async def test_approval_timeout_rejects(tmp_path) -> None:
@@ -164,9 +170,7 @@ async def test_runtime_approval_flow(tmp_path) -> None:
     manager = ApprovalManager(store)
 
     async def handler(call_id: str, name: str, arguments: dict) -> bool:
-        return await manager.request_and_wait(
-            run_id="r-test", tool_name=name, arguments=arguments
-        )
+        return await manager.request_and_wait(run_id="r-test", tool_name=name, arguments=arguments)
 
     harness = AgentHarness(
         llm=_scripted_llm("database.write"),
@@ -184,7 +188,15 @@ async def test_runtime_approval_flow(tmp_path) -> None:
             break
     assert state.status == RunStatus.WAITING_APPROVAL
 
-    pending = await store.list(ApprovalStatus.PENDING)
+    # The status flips before the approval row is written by the handler's
+    # async store.create, so poll for the row instead of asserting a single
+    # read (which is racy once the runtime schedules the handler).
+    pending: list = []
+    for _ in range(50):
+        pending = await store.list(ApprovalStatus.PENDING)
+        if pending:
+            break
+        await asyncio.sleep(0.02)
     assert len(pending) == 1
     assert pending[0].tool_name == "database.write"
     await manager.decide(pending[0].id, approve=True)
@@ -199,15 +211,20 @@ async def test_runtime_approval_rejected_blocks_tool(tmp_path) -> None:
     manager = ApprovalManager(store)
 
     async def handler(call_id: str, name: str, arguments: dict) -> bool:
-        async def _reject() -> None:
-            await asyncio.sleep(0.02)
-            pending = await store.list(ApprovalStatus.PENDING)
-            await manager.decide(pending[-1].id, approve=False)
-
-        asyncio.create_task(_reject())
-        return await manager.request_and_wait(
-            run_id="r-test", tool_name=name, arguments=arguments
+        # The runtime awaits us inline. Start the request, wait until its row is
+        # visible (guaranteeing the waiter is registered), then reject it
+        # deterministically - no fire-and-forget task racing store.create.
+        request = asyncio.create_task(
+            manager.request_and_wait(run_id="r-test", tool_name=name, arguments=arguments)
         )
+        for _ in range(100):
+            pending = await store.list(ApprovalStatus.PENDING)
+            if pending:
+                break
+            await asyncio.sleep(0.01)
+        assert pending, "approval request never became visible"
+        await manager.decide(pending[-1].id, approve=False)
+        return await request
 
     harness = AgentHarness(
         llm=_scripted_llm("database.write"),
@@ -219,7 +236,9 @@ async def test_runtime_approval_rejected_blocks_tool(tmp_path) -> None:
     state = await runtime.run(state)
     assert state.status == RunStatus.COMPLETED
     blocked = [
-        o for o in state.observations if o.get("status") == "blocked" and o.get("tool") == "database.write"
+        o
+        for o in state.observations
+        if o.get("status") == "blocked" and o.get("tool") == "database.write"
     ]
     assert len(blocked) == 1
     assert "rejected" in blocked[0]["error"]
@@ -264,20 +283,25 @@ async def test_policy_api() -> None:
             assert rules["custom.tool"] == "deny"
 
 
-async def test_approval_api_decide(tmp_path) -> None:
+async def test_approval_api_decide() -> None:
     async with app.router.lifespan_context(app):
         manager = app.state.approval_manager
+        # Unique run id so rows left behind by an earlier crashed run of this
+        # test (the API store is a persistent shared DB) never collide.
+        run_id = f"r-api-{uuid.uuid4().hex[:8]}"
         waiter = asyncio.create_task(
-            manager.request_and_wait(
-                run_id="r-api", tool_name="database.write", arguments={"a": 1}
-            )
+            manager.request_and_wait(run_id=run_id, tool_name="database.write", arguments={"a": 1})
         )
-        await asyncio.sleep(0.05)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            resp = await client.get("/api/approvals", params={"status": "pending"})
-            assert resp.status_code == 200
-            pending = resp.json()
+            pending = []
+            for _ in range(100):
+                resp = await client.get("/api/approvals", params={"status": "pending"})
+                assert resp.status_code == 200
+                pending = [row for row in resp.json() if row["run_id"] == run_id]
+                if pending:
+                    break
+                await asyncio.sleep(0.02)
             assert len(pending) == 1
             assert pending[0]["tool_name"] == "database.write"
 

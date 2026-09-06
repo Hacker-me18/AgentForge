@@ -41,7 +41,9 @@ class ToolRegistry:
     def get(self, name: str) -> Tool | None:
         return self._tools.get(name)
 
-    def list(self) -> list[Tool]:
+    # Named `all`: a method called `list` shadows the builtin and breaks the
+    # later `schemas() -> list[dict]` annotation under mypy.
+    def all(self) -> list[Tool]:
         return list(self._tools.values())
 
     def schemas(self) -> list[dict]:
@@ -52,7 +54,7 @@ class ToolRegistry:
                 "function": {
                     "name": tool.metadata.name,
                     "description": tool.metadata.description,
-                    "parameters": tool.metadata.schema,
+                    "parameters": tool.metadata.input_schema,
                 },
             }
             for tool in self._tools.values()

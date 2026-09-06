@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from typing import Any, cast
 
 import aiosqlite
 
@@ -42,6 +43,7 @@ class ApprovalStore:
         import json
 
         async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("PRAGMA busy_timeout = 15000")
             await db.execute(
                 "INSERT INTO approvals VALUES (?,?,?,?,?,?,?,?,?)",
                 (
@@ -62,11 +64,9 @@ class ApprovalStore:
     async def get(self, approval_id: str) -> Approval | None:
         await self._ensure()
         async with aiosqlite.connect(self.db_path) as db:
-            cursor = await db.execute(
-                "SELECT * FROM approvals WHERE id = ?", (approval_id,)
-            )
+            cursor = await db.execute("SELECT * FROM approvals WHERE id = ?", (approval_id,))
             row = await cursor.fetchone()
-        return self._to_approval(row) if row else None
+        return self._to_approval(cast(tuple[Any, ...], row)) if row else None
 
     async def list(self, status: ApprovalStatus | None = None) -> list[Approval]:
         await self._ensure()
@@ -79,12 +79,13 @@ class ApprovalStore:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(query, params)
             rows = await cursor.fetchall()
-        return [self._to_approval(row) for row in rows]
+        return [self._to_approval(cast(tuple[Any, ...], row)) for row in rows]
 
     async def decide(self, approval_id: str, approve: bool) -> Approval | None:
         await self._ensure()
         status = ApprovalStatus.APPROVED if approve else ApprovalStatus.REJECTED
         async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("PRAGMA busy_timeout = 15000")
             cursor = await db.execute(
                 "UPDATE approvals SET status = ?, decided_at = ? WHERE id = ? AND status = ?",
                 (status.value, time.time(), approval_id, ApprovalStatus.PENDING.value),
@@ -94,8 +95,16 @@ class ApprovalStore:
             return None
         return await self.get(approval_id)
 
+    async def counts(self) -> dict[str, int]:
+        """Approval counts per status (for the overview / policy panels)."""
+        await self._ensure()
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("SELECT status, COUNT(*) FROM approvals GROUP BY status")
+            rows = cast(list[tuple[Any, ...]], await cursor.fetchall())
+        return {str(row[0]): int(row[1]) for row in rows}
+
     @staticmethod
-    def _to_approval(row: tuple) -> Approval:
+    def _to_approval(row: tuple[Any, ...]) -> Approval:
         import json
 
         return Approval(
@@ -132,18 +141,22 @@ class ApprovalManager:
         reason: str = "",
         timeout: float = 600.0,
     ) -> bool:
-        approval = await self.store.create(
-            Approval(
-                run_id=run_id,
-                tool_name=tool_name,
-                arguments=arguments,
-                risk_level=risk_level,
-                reason=reason,
-            )
+        approval = Approval(
+            run_id=run_id,
+            tool_name=tool_name,
+            arguments=arguments,
+            risk_level=risk_level,
+            reason=reason,
         )
         event = asyncio.Event()
+        # Register the waiter *before* persisting the row: a decider can only
+        # act on a committed PENDING row, so once that row is visible the waiter
+        # is guaranteed to exist. Registering after store.create left a window
+        # where a decision landing between the commit and the registration was
+        # silently dropped, stranding the request until its timeout.
         self._waiters[approval.id] = (event, False)
         try:
+            await self.store.create(approval)
             await asyncio.wait_for(event.wait(), timeout=timeout)
         except TimeoutError:
             await self.store.decide(approval.id, approve=False)

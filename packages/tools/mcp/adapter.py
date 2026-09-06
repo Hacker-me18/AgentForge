@@ -19,7 +19,7 @@ class MCPToolAdapter(Tool):
         self._metadata = ToolMetadata(
             name=tool_info["name"],
             description=tool_info.get("description", ""),
-            schema=tool_info.get("inputSchema") or {"type": "object", "properties": {}},
+            input_schema=tool_info.get("inputSchema") or {"type": "object", "properties": {}},
             risk_level=risk_level,
             source="mcp",
         )

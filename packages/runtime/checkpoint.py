@@ -2,6 +2,7 @@
 
 import os
 from datetime import UTC, datetime
+from typing import Any, cast
 
 import aiosqlite
 
@@ -36,6 +37,7 @@ class CheckpointStore:
 
     async def save(self, state: AgentState) -> None:
         async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("PRAGMA busy_timeout = 15000")
             await self._ensure_table(db)
             await db.execute(
                 "INSERT INTO checkpoints (run_id, step, state_json, created_at)"
@@ -44,7 +46,7 @@ class CheckpointStore:
             )
             await db.commit()
 
-    async def _latest_row(self, run_id: str) -> tuple | None:
+    async def _latest_row(self, run_id: str) -> tuple[Any, ...] | None:
         async with aiosqlite.connect(self.db_path) as db:
             await self._ensure_table(db)
             cursor = await db.execute(
@@ -52,7 +54,9 @@ class CheckpointStore:
                 " WHERE run_id = ? ORDER BY rowid DESC LIMIT 1",
                 (run_id,),
             )
-            return await cursor.fetchone()
+            row = await cursor.fetchone()
+            # aiosqlite types rows opaquely; our SELECT columns map by position.
+            return cast(tuple[Any, ...] | None, row)
 
     async def load(self, run_id: str) -> AgentState | None:
         row = await self._latest_row(run_id)

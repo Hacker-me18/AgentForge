@@ -9,8 +9,9 @@ def estimate_tokens(text: str) -> int:
 
 
 class ContextEngine:
-    def __init__(self, token_budget: int = 16000, keep_recent: int = 6,
-                 compress_threshold: int = 200):
+    def __init__(
+        self, token_budget: int = 16000, keep_recent: int = 6, compress_threshold: int = 200
+    ):
         self.token_budget = token_budget
         self.keep_recent = keep_recent
         self.compress_threshold = compress_threshold
@@ -71,7 +72,10 @@ class ContextEngine:
             content = message.get("content", "")
             keep = message.get("role") == "system" or index >= total - self.keep_recent
             if not keep and isinstance(content, str) and len(content) > self.compress_threshold:
-                message = {**message, "content": f"[compressed] {content[: self.compress_threshold]}"}
+                message = {
+                    **message,
+                    "content": f"[compressed] {content[: self.compress_threshold]}",
+                }
             result.append(message)
         return result
 

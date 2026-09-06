@@ -46,6 +46,8 @@ class MCPServer:
         if request_id is None:  # notification, e.g. notifications/initialized
             return None
 
+        # JSON-RPC results are shape-variant across methods; keep the value Any.
+        result: dict[str, Any]
         try:
             if method == "initialize":
                 result = {
@@ -101,6 +103,7 @@ class MCPServer:
             line = line.strip()
             if not line:
                 continue
+            response: dict[str, Any] | None
             try:
                 request = json.loads(line)
             except json.JSONDecodeError as exc:

@@ -17,7 +17,9 @@ class RiskLevel(StrEnum):
 class ToolMetadata(BaseModel):
     name: str
     description: str = ""
-    schema: dict = Field(default_factory=lambda: {"type": "object", "properties": {}})
+    # Named input_schema: a field literally called `schema` shadows
+    # pydantic BaseModel.schema() and trips mypy on every subclass.
+    input_schema: dict = Field(default_factory=lambda: {"type": "object", "properties": {}})
     risk_level: RiskLevel = RiskLevel.LOW
     timeout: int = 30  # seconds
     cost: float = 0.0  # estimated cost per call

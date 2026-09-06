@@ -45,7 +45,7 @@ class AgentRuntime:
 
     async def run(self, state: AgentState) -> AgentState:
         state.status = RunStatus.RUNNING
-        self.harness.emit("run_started", {"run_id": state.run_id})
+        self.harness.emit("run.started", {"run_id": state.run_id, "task": state.task})
         started_at = time.monotonic()
         deadline = started_at + self.timeout
         max_steps = (
@@ -75,14 +75,21 @@ class AgentRuntime:
 
                 context = await self.harness.build_context(state)
                 tools = await self.harness.resolve_tools(state)
+                self.harness.emit(
+                    "llm.request",
+                    {"run_id": state.run_id, "step": state.step + 1, "messages": len(context)},
+                )
                 response = await self.harness.llm.chat(context, tools)
                 state.step += 1
                 self._accumulate_usage(state, response)
                 self.harness.emit(
-                    "llm_response",
+                    "llm.response",
                     {
                         "run_id": state.run_id,
                         "step": state.step,
+                        "model": response.model,
+                        "input_tokens": response.input_tokens,
+                        "output_tokens": response.output_tokens,
                         "finish_reason": response.finish_reason,
                         "tool_calls": len(response.tool_calls),
                     },
@@ -153,19 +160,19 @@ class AgentRuntime:
         """Pause the run and wait for a human approval decision."""
         state.status = RunStatus.WAITING_APPROVAL
         self.harness.emit(
-            "approval_requested",
+            "approval.requested",
             {"run_id": state.run_id, "tool": call.name, "arguments": call.arguments},
         )
         try:
             if self.approval_handler is None:
                 self.harness.emit(
-                    "approval_decided",
+                    "approval.decided",
                     {"run_id": state.run_id, "tool": call.name, "approved": False},
                 )
                 return False
             approved = await self.approval_handler(call.id, call.name, call.arguments)
             self.harness.emit(
-                "approval_decided",
+                "approval.decided",
                 {"run_id": state.run_id, "tool": call.name, "approved": approved},
             )
             return approved
@@ -203,9 +210,7 @@ class AgentRuntime:
             )
             return True
         state.status = RunStatus.FAILED
-        state.error = (
-            f"tool {call.name} failed after {self.max_retries + 1} attempts: {last_error}"
-        )
+        state.error = f"tool {call.name} failed after {self.max_retries + 1} attempts: {last_error}"
         return False
 
     def _accumulate_usage(self, state: AgentState, response: LLMResponse) -> None:
@@ -219,9 +224,12 @@ class AgentRuntime:
     async def _save_checkpoint(self, state: AgentState) -> None:
         if self.checkpoint is not None:
             await self.checkpoint.save(state)
+            self.harness.emit("checkpoint.created", {"run_id": state.run_id, "step": state.step})
 
     async def _finish(self, state: AgentState) -> AgentState:
         self._cancel_requests.discard(state.run_id)
         await self._save_checkpoint(state)
-        await self.harness.finalize(state)
+        summary = await self.harness.finalize(state)
+        event = "run.completed" if state.status == RunStatus.COMPLETED else "run.failed"
+        self.harness.emit(event, summary)
         return state

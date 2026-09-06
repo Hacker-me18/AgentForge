@@ -27,7 +27,14 @@ BUILTIN_TOOLS = {
     "python.execute": RiskLevel.MEDIUM,
 }
 
-DEMO_SERVER = Path(__file__).resolve().parents[1] / "packages" / "tools" / "mcp" / "servers" / "demo_server.py"
+DEMO_SERVER = (
+    Path(__file__).resolve().parents[1]
+    / "packages"
+    / "tools"
+    / "mcp"
+    / "servers"
+    / "demo_server.py"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +44,7 @@ DEMO_SERVER = Path(__file__).resolve().parents[1] / "packages" / "tools" / "mcp"
 
 def test_registry_register_get_list() -> None:
     registry = create_default_registry()
-    assert {tool.metadata.name for tool in registry.list()} == set(BUILTIN_TOOLS)
+    assert {tool.metadata.name for tool in registry.all()} == set(BUILTIN_TOOLS)
     assert registry.get("calculator") is not None
     assert registry.get("no-such-tool") is None
 
@@ -112,9 +119,7 @@ async def test_gateway_unknown_tool_raises_not_found() -> None:
 
 
 async def test_gateway_policy_deny_raises() -> None:
-    gateway = ToolGateway(
-        create_default_registry(), policy_checker=lambda name, meta, args: "deny"
-    )
+    gateway = ToolGateway(create_default_registry(), policy_checker=lambda name, meta, args: "deny")
     with pytest.raises(PolicyDeniedError):
         await gateway.call("calculator", {"expression": "1+1"})
 

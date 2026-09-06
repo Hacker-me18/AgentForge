@@ -77,9 +77,7 @@ class ToolGateway:
                 reason = f"tool '{name}' timed out after {metadata.timeout}s"
             else:
                 reason = f"tool '{name}' failed: {exc}"
-            self.emit(
-                "tool.failed", {"tool": name, "error": reason, "duration_ms": duration_ms}
-            )
+            self.emit("tool.failed", {"tool": name, "error": reason, "duration_ms": duration_ms})
             raise ToolExecutionError(reason) from exc
 
         duration_ms = (time.perf_counter() - started) * 1000

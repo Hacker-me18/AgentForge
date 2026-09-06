@@ -1,0 +1,562 @@
+{
+  "name": "research",
+  "description": "Research agent evaluation set: technology comparison tasks whose expected evidence is fully covered by the built-in web.search knowledge base.",
+  "cases": [
+    {
+      "id": "research-01",
+      "task": "Write a short comparison report of PostgreSQL vs MySQL, focusing on SQL compliance, JSONB and which one wins on simple read-heavy workloads. Cite concrete details.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "PostgreSQL",
+        "MySQL",
+        "JSONB",
+        "read-heavy"
+      ]
+    },
+    {
+      "id": "research-02",
+      "task": "Research the key differences between PostgreSQL and MySQL and decide which is easier to host at scale. Report the specific features each database is known for.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "advanced SQL compliance",
+        "extensibility",
+        "hosting ecosystem"
+      ]
+    },
+    {
+      "id": "research-03",
+      "task": "Explain why PostgreSQL is preferred for complex analytical queries. Which SQL features make it well suited to analytics and complex relational models?",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "PostgreSQL",
+        "window functions",
+        "partial indexes",
+        "query planner"
+      ]
+    },
+    {
+      "id": "research-04",
+      "task": "Compare Redis vs Memcached for a caching layer. Which one supports rich data structures and persistence, and which stays a simpler LRU cache?",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "Redis",
+        "Memcached",
+        "sorted sets",
+        "Lua scripting",
+        "LRU"
+      ]
+    },
+    {
+      "id": "research-05",
+      "task": "Should we use Redis or Memcached for low-latency caching? Research both and report how they differ in threading model and per-key overhead.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "multi-threaded",
+        "LRU cache",
+        "lower per-key overhead",
+        "persistence"
+      ]
+    },
+    {
+      "id": "research-06",
+      "task": "Compare Kafka vs RabbitMQ as a message system. Report how each one is optimized: high-throughput event streaming and replay versus flexible routing and ACKs.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "Kafka",
+        "RabbitMQ",
+        "append-only log",
+        "event streaming"
+      ]
+    },
+    {
+      "id": "research-07",
+      "task": "Research how Kafka and RabbitMQ differ on delivery semantics and routing flexibility for a queue-based architecture.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "broker-centric",
+        "exchanges",
+        "per-message ACKs",
+        "replay"
+      ]
+    },
+    {
+      "id": "research-08",
+      "task": "Compare React vs Vue for a frontend team that values a gentle learning curve. Which uses JSX with a large ecosystem, and which ships single-file components?",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "React",
+        "Vue",
+        "JSX",
+        "single-file components"
+      ]
+    },
+    {
+      "id": "research-09",
+      "task": "Research the trade-offs between React and Vue regarding data flow and built-in features before picking a framework.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "unidirectional data flow",
+        "built-in reactivity",
+        "learning curve"
+      ]
+    },
+    {
+      "id": "research-10",
+      "task": "Compare REST vs GraphQL for a public API. How does each approach resource modeling, field selection and caching?",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "REST",
+        "GraphQL",
+        "over-fetching",
+        "typed schema"
+      ]
+    },
+    {
+      "id": "research-11",
+      "task": "Research whether REST or GraphQL is easier to cache and why clients benefit from declaring exactly which fields they need.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "HTTP verbs",
+        "caching",
+        "exactly which fields",
+        "avoiding over-fetching"
+      ]
+    },
+    {
+      "id": "research-12",
+      "task": "Compare Docker vs Kubernetes: is it containers versus orchestration? Report what each layer handles for a production workload.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "Docker",
+        "Kubernetes",
+        "individual containers",
+        "scheduling"
+      ]
+    },
+    {
+      "id": "research-13",
+      "task": "Research how Kubernetes adds value over plain Docker through self-healing and autoscaling for fleets of containers.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "orchestrates fleets",
+        "self-healing",
+        "service discovery",
+        "autoscaling"
+      ]
+    },
+    {
+      "id": "research-14",
+      "task": "Compare MongoDB vs relational databases. Report how each handles document flexibility, horizontal scaling and joins.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "MongoDB",
+        "BSON documents",
+        "sharding",
+        "relational databases"
+      ]
+    },
+    {
+      "id": "research-15",
+      "task": "Research the strengths of MongoDB for flexible documents versus the transactional guarantees of relational databases, and when to pick each.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "enforce schemas",
+        "joins",
+        "transactional guarantees",
+        "flexible BSON"
+      ]
+    },
+    {
+      "id": "research-16",
+      "task": "Compare gRPC vs REST for internal service communication. Report the encoding, transport and debuggability differences.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "gRPC",
+        "REST",
+        "HTTP/2",
+        "protobuf"
+      ]
+    },
+    {
+      "id": "research-17",
+      "task": "Research why gRPC is used for low-latency RPC and where REST's textual JSON and browsability are still an advantage.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "code-generated stubs",
+        "low-latency RPC",
+        "textual JSON",
+        "easier to debug"
+      ]
+    },
+    {
+      "id": "research-18",
+      "task": "Compare TCP vs UDP transport protocols. Report the reliability and latency trade-offs of each for real-time media and DNS.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "TCP",
+        "UDP",
+        "reliable",
+        "retransmission"
+      ]
+    },
+    {
+      "id": "research-19",
+      "task": "Research why UDP suits DNS and real-time media while TCP provides ordered byte streams via handshakes and congestion control.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "connectionless",
+        "minimal latency",
+        "ordered",
+        "congestion-controlled"
+      ]
+    },
+    {
+      "id": "research-20",
+      "task": "Compare microservices vs a monolith architecture. Report how each approaches independent deployment and transactions.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "Microservices",
+        "monolith",
+        "independently deployable",
+        "separate data stores"
+      ]
+    },
+    {
+      "id": "research-21",
+      "task": "Research when a monolith simplifies local development and transactions compared to splitting a system into services.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "deployable unit",
+        "simplifying transactions",
+        "local development"
+      ]
+    },
+    {
+      "id": "research-22",
+      "task": "Compare Python vs JavaScript for data science work. Report which ecosystem dominates analysis tooling and which is stronger for browser charts.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "Python",
+        "JavaScript",
+        "NumPy",
+        "pandas"
+      ]
+    },
+    {
+      "id": "research-23",
+      "task": "Research the data science tooling gap: scikit-learn and D3.js sit in different camps. Summarize the trade-offs of each language.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "scikit-learn",
+        "D3.js",
+        "interactive browser visualizations",
+        "full-stack sharing"
+      ]
+    },
+    {
+      "id": "research-24",
+      "task": "Compare JWT vs session-based authentication. Report how each is verified and how hard revocation is.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "JWT",
+        "session",
+        "stateless signed tokens",
+        "server-side"
+      ]
+    },
+    {
+      "id": "research-25",
+      "task": "Research when session auth's easy revocation beats stateless JWTs and what sticky sessions or shared stores are needed.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "revocation trivial",
+        "sticky sessions",
+        "shared stores",
+        "stateless"
+      ]
+    },
+    {
+      "id": "research-26",
+      "task": "Compare B-tree vs LSM-tree storage engines for a time-series workload. Report how each handles reads versus writes.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "B-trees",
+        "LSM-trees",
+        "update pages in place",
+        "reads"
+      ]
+    },
+    {
+      "id": "research-27",
+      "task": "Research why LSM-tree engines favor write-heavy workloads: memtables, sorted runs and SSTables versus in-place page updates.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "memtables",
+        "sorted runs",
+        "SSTables",
+        "write-heavy"
+      ]
+    },
+    {
+      "id": "research-28",
+      "task": "Design a storage stack combining PostgreSQL and Redis. Compare PostgreSQL's transactional guarantees with Redis caching, and report the combined roles.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "PostgreSQL",
+        "Redis",
+        "ACID",
+        "Lua scripting"
+      ]
+    },
+    {
+      "id": "research-29",
+      "task": "Research a web stack of React on the frontend served by a gRPC or REST API. Compare the API choices and note where React's ecosystem fits.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "React",
+        "gRPC",
+        "REST",
+        "GraphQL"
+      ]
+    },
+    {
+      "id": "research-30",
+      "task": "Sketch a microservices architecture that uses Kafka for event streaming and Kubernetes for orchestration. Compare each technology's role.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "Microservices",
+        "Kafka",
+        "Kubernetes",
+        "event streaming"
+      ]
+    },
+    {
+      "id": "research-31",
+      "task": "Research an observability and caching stack: MongoDB for documents, Redis as cache and B-tree or LSM storage trade-offs underneath.",
+      "category": "research.comparison",
+      "expected_tools": [
+        "web.search"
+      ],
+      "forbidden_tools": [
+        "shell.execute",
+        "database.write"
+      ],
+      "expected_keywords": [
+        "MongoDB",
+        "Redis",
+        "LSM-trees",
+        "B-trees"
+      ]
+    }
+  ]
+}

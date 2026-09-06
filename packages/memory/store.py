@@ -47,8 +47,11 @@ class MemoryStore:
                 "INSERT INTO memory (key, value, updated_at) VALUES (?, ?, ?) "
                 "ON CONFLICT(key) DO UPDATE SET"
                 " value = excluded.value, updated_at = excluded.updated_at",
-                (key, json.dumps(value, ensure_ascii=False, default=str),
-                 datetime.now(UTC).isoformat()),
+                (
+                    key,
+                    json.dumps(value, ensure_ascii=False, default=str),
+                    datetime.now(UTC).isoformat(),
+                ),
             )
             await db.commit()
 

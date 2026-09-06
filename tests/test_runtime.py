@@ -110,9 +110,7 @@ async def test_budget_exceeded_stops_run() -> None:
 
 async def test_checkpoint_roundtrip(tmp_path) -> None:
     store = CheckpointStore(str(tmp_path / "checkpoints.db"))
-    harness, runtime = make_runtime(
-        [tool_call_response(), final_response()], checkpoint=store
-    )
+    harness, runtime = make_runtime([tool_call_response(), final_response()], checkpoint=store)
     state = await runtime.run(await harness.prepare("checkpoint me", {}))
 
     loaded = await store.load(state.run_id)

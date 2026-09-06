@@ -99,6 +99,114 @@ _KNOWLEDGE_BASE: list[dict] = [
             "on undo segments and doublewrite buffering."
         ),
     },
+    {
+        "title": "Redis vs Memcached for caching",
+        "url": "https://example.com/redis-vs-memcached",
+        "snippet": (
+            "Redis supports rich data structures (hashes, sorted sets), "
+            "persistence and Lua scripting, while Memcached is a simpler "
+            "multi-threaded LRU cache with lower per-key overhead."
+        ),
+    },
+    {
+        "title": "Kafka vs RabbitMQ: message systems compared",
+        "url": "https://example.com/kafka-vs-rabbitmq",
+        "snippet": (
+            "Kafka is a distributed append-only log optimized for high-throughput "
+            "event streaming and replay, while RabbitMQ is a broker-centric "
+            "queue with flexible routing (exchanges) and per-message ACKs."
+        ),
+    },
+    {
+        "title": "React vs Vue: frontend framework trade-offs",
+        "url": "https://example.com/react-vs-vue",
+        "snippet": (
+            "React uses JSX and a unidirectional data flow with a large "
+            "ecosystem, while Vue offers single-file components, built-in "
+            "reactivity and a gentler learning curve."
+        ),
+    },
+    {
+        "title": "REST vs GraphQL API design",
+        "url": "https://example.com/rest-vs-graphql",
+        "snippet": (
+            "REST exposes fixed resources over HTTP verbs and caching, while "
+            "GraphQL lets clients declare exactly which fields they need via a "
+            "typed schema, avoiding over-fetching but complicating cache."
+        ),
+    },
+    {
+        "title": "Docker vs Kubernetes: containers vs orchestration",
+        "url": "https://example.com/docker-vs-kubernetes",
+        "snippet": (
+            "Docker packages and runs individual containers, while Kubernetes "
+            "orchestrates fleets of containers with scheduling, self-healing, "
+            "service discovery and horizontal autoscaling."
+        ),
+    },
+    {
+        "title": "MongoDB vs relational databases",
+        "url": "https://example.com/mongodb-vs-relational",
+        "snippet": (
+            "MongoDB stores flexible BSON documents and scales horizontally via "
+            "sharding, while relational databases enforce schemas and joins "
+            "with strong transactional guarantees."
+        ),
+    },
+    {
+        "title": "gRPC vs REST for service communication",
+        "url": "https://example.com/grpc-vs-rest",
+        "snippet": (
+            "gRPC uses HTTP/2 with protobuf binary encoding and code-generated "
+            "stubs for low-latency RPC, while REST relies on textual JSON and "
+            "is easier to debug and browse."
+        ),
+    },
+    {
+        "title": "TCP vs UDP transport protocols",
+        "url": "https://example.com/tcp-vs-udp",
+        "snippet": (
+            "TCP provides ordered, reliable, congestion-controlled byte streams "
+            "via handshakes and retransmission, while UDP is connectionless "
+            "with minimal latency, suiting DNS and real-time media."
+        ),
+    },
+    {
+        "title": "Microservices vs monolith architecture",
+        "url": "https://example.com/microservices-vs-monolith",
+        "snippet": (
+            "Microservices split a system into independently deployable "
+            "services with separate data stores, while a monolith keeps one "
+            "deployable unit, simplifying transactions and local development."
+        ),
+    },
+    {
+        "title": "Python vs JavaScript for data science",
+        "url": "https://example.com/python-vs-javascript-ds",
+        "snippet": (
+            "Python dominates data science with NumPy, pandas and scikit-learn, "
+            "while JavaScript is stronger for interactive browser "
+            "visualizations with D3.js and full-stack sharing."
+        ),
+    },
+    {
+        "title": "JWT vs session-based authentication",
+        "url": "https://example.com/jwt-vs-session",
+        "snippet": (
+            "JWTs are stateless signed tokens verified without a server-side "
+            "store, while session auth keeps state server-side, making "
+            "revocation trivial but requiring sticky sessions or shared stores."
+        ),
+    },
+    {
+        "title": "B-tree vs LSM-tree storage engines",
+        "url": "https://example.com/btree-vs-lsm",
+        "snippet": (
+            "B-trees update pages in place and excel at reads, while LSM-trees "
+            "buffer writes in memtables and flush sorted runs (SSTables), "
+            "favoring write-heavy workloads like time-series data."
+        ),
+    },
 ]
 
 
@@ -175,7 +283,9 @@ def _database_read(arguments: dict, state: Any = None) -> dict:
 
 def _database_write(arguments: dict, state: Any = None) -> dict:
     query = str(arguments.get("query", "")).strip()
-    conn = sqlite3.connect(_db_path(arguments))
+    # timeout: wait for the event bus's fire-and-forget writers instead of
+    # surfacing SQLITE_BUSY when they briefly hold the write lock.
+    conn = sqlite3.connect(_db_path(arguments), timeout=15)
     try:
         cursor = conn.execute(query)
         conn.commit()
@@ -250,7 +360,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="mock.echo",
                 description="Echo back the given arguments (testing utility).",
-                schema=_OBJECT_SCHEMA,
+                input_schema=_OBJECT_SCHEMA,
                 risk_level=RiskLevel.LOW,
             ),
             lambda arguments, state=None: {"echo": arguments},
@@ -261,11 +371,9 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="calculator",
                 description="Evaluate a basic arithmetic expression safely.",
-                schema={
+                input_schema={
                     "type": "object",
-                    "properties": {
-                        "expression": {"type": "string", "description": "e.g. '1+2*3'"}
-                    },
+                    "properties": {"expression": {"type": "string", "description": "e.g. '1+2*3'"}},
                     "required": ["expression"],
                 },
                 risk_level=RiskLevel.LOW,
@@ -278,7 +386,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="web.search",
                 description="Search the web (MVP: built-in static knowledge base).",
-                schema={
+                input_schema={
                     "type": "object",
                     "properties": {"query": {"type": "string"}},
                     "required": ["query"],
@@ -294,7 +402,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="document.read",
                 description="Read a text file inside the whitelisted docs directory.",
-                schema={
+                input_schema={
                     "type": "object",
                     "properties": {
                         "path": {"type": "string", "description": "relative file path"},
@@ -312,7 +420,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="database.read",
                 description="Run a read-only SELECT query against a local SQLite database.",
-                schema={
+                input_schema={
                     "type": "object",
                     "properties": {
                         "query": {"type": "string"},
@@ -330,7 +438,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="database.write",
                 description="Execute a write SQL statement against a local SQLite database.",
-                schema={
+                input_schema={
                     "type": "object",
                     "properties": {
                         "query": {"type": "string"},
@@ -348,7 +456,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
             ToolMetadata(
                 name="shell.execute",
                 description="Execute a shell command (CRITICAL; denied by default policy).",
-                schema={
+                input_schema={
                     "type": "object",
                     "properties": {"command": {"type": "string"}},
                     "required": ["command"],
@@ -367,7 +475,7 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
                     "Execute Python code inside an isolated Docker sandbox "
                     "(agentos-sandbox image; network disabled, memory/CPU limited)."
                 ),
-                schema={
+                input_schema={
                     "type": "object",
                     "properties": {
                         "code": {"type": "string"},
@@ -382,4 +490,3 @@ def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> Tool
         )
     )
     return registry
-

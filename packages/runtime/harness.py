@@ -49,23 +49,29 @@ class AgentHarness:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": task})
         state = AgentState(
-            run_id=uuid.uuid4().hex,
+            run_id=config.get("run_id") or uuid.uuid4().hex,
             agent_id=config.get("agent_id", "default-agent"),
             task=task,
             messages=messages,
             context={"system_prompt": system_prompt, "agent_config": config},
             status=RunStatus.PENDING,
         )
-        self.emit("run_prepared", {"run_id": state.run_id, "agent_id": state.agent_id})
+        self.emit("run.prepared", {"run_id": state.run_id, "agent_id": state.agent_id})
         return state
 
     async def build_context(self, state: AgentState) -> list[dict]:
         if self.context_engine is not None:
             tools = await self.resolve_tools(state)
-            return await self.context_engine.build(
+            messages = await self.context_engine.build(
                 state, state.context.get("system_prompt"), tools
             )
-        return list(state.messages)
+        else:
+            messages = list(state.messages)
+        self.emit(
+            "context.created",
+            {"run_id": state.run_id, "step": state.step, "message_count": len(messages)},
+        )
+        return messages
 
     async def resolve_tools(self, state: AgentState) -> list[dict]:
         if self.tool_gateway is None:
