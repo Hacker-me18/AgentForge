@@ -34,18 +34,18 @@
   - [x] 5.3 实现 Approval 模型与 API（审批请求创建、Approve/Reject、审计留痕、运行暂停/恢复）
   - [x] 5.4 验证：ALLOW/DENY/APPROVAL 三种路径测试通过；database.write 触发审批流（11 项 policy 测试通过）
 
-- [ ] Task 6: Phase F — Event / Trace / Cost
-  - [ ] 6.1 实现统一 Event 模型（id/run_id/type/timestamp/sequence/payload）与 EventBus / EventStore
-  - [ ] 6.2 Runtime 关键动作埋点（run.started、llm.request、tool.request、policy.checked、sandbox.completed、approval.requested、run.completed/failed 等），不侵入业务代码
-  - [ ] 6.3 实现 TraceBuilder / Span（Trace Tree）与 CostTracker（按模型价格汇总）
-  - [ ] 6.4 验证：一次完整 Run 产生完整 Trace Tree 与 Tokens/Cost/Latency/Steps 汇总
+- [x] Task 6: Phase F — Event / Trace / Cost
+  - [x] 6.1 实现统一 Event 模型（id/run_id/type/timestamp/sequence/payload）与 EventBus / EventStore
+  - [x] 6.2 Runtime 关键动作埋点（run.started、llm.request、tool.request、policy.checked、sandbox.completed、approval.requested、run.completed/failed 等），不侵入业务代码
+  - [x] 6.3 实现 TraceBuilder / Span（Trace Tree）与 CostTracker（按模型价格汇总）
+  - [x] 6.4 验证：一次完整 Run 产生完整 Trace Tree 与 Tokens/Cost/Latency/Steps 汇总（4 项 tracing 测试通过，全套 34 passed）
 
-- [ ] Task 7: Phase G — Evaluation 与 A/B
-  - [ ] 7.1 实现 Dataset / Case 模型，准备 ≥30 条 Research 评测用例（expected_tools / expected_keywords）
-  - [ ] 7.2 实现 Evaluation Runner：运行 → 收集 Trace → Evaluator → Score → Report
-  - [ ] 7.3 实现评价维度：Task Success / Tool Selection / Evidence / Policy / Latency / Cost / Steps
-  - [ ] 7.4 实现离线 A/B Experiment（Control vs Treatment 版本对比报告）
-  - [ ] 7.5 验证：评估可独立运行并输出真实对比报告
+- [x] Task 7: Phase G — Evaluation 与 A/B
+  - [x] 7.1 实现 Dataset / Case 模型，准备 ≥30 条 Research 评测用例（expected_tools / expected_keywords）→ datasets/eval/research.json 31 条，builder 用真实 web.search 回放校验关键词必中
+  - [x] 7.2 实现 Evaluation Runner：运行 → 收集 Trace → Evaluator → Score → Report（packages/evaluation，离线同步事件收集，镜像 RunService 装配）
+  - [x] 7.3 实现评价维度：Task Success / Tool Selection / Evidence / Policy / Latency / Cost / Steps
+  - [x] 7.4 实现离线 A/B Experiment（Control vs Treatment 版本对比报告）
+  - [x] 7.5 验证：全量 31 用例 task_success/tool_selection/evidence/policy 全 1.0；policy deny 违规被捕获；A/B v1.0(route) vs v1.1(echo) 输出真实对比报告（9 项 evaluation 测试通过，全套 51 passed；报告落盘 data/eval/）
 
 - [ ] Task 8: Phase H — Web UI
   - [ ] 8.1 Overview：指标卡（Runs/Success%/Cost/Latency）+ Recent Runs，数据来自真实 API
