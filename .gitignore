@@ -9,14 +9,14 @@ dist/
 build/
 .venv/
 
-# App data / artifacts
-data/*.db
-data/artifacts/
+# App data / artifacts (all generated at runtime / by scripts/seed_demo.py)
+data/
 .env
 
 # Node
 node_modules/
 apps/web/dist/
+*.tsbuildinfo
 
 # OS / IDE
 .DS_Store

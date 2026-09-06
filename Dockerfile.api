@@ -1,0 +1,27 @@
+# AgentOS Studio — API image
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    AGENTOS_DATABASE_URL=sqlite+aiosqlite:///./data/agentos.db
+
+# Override at build time for faster mirrors, e.g.
+# docker build -f Dockerfile.api --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple .
+ARG PIP_INDEX_URL=https://pypi.org/simple
+
+WORKDIR /app
+
+# Python deps first (better layer caching)
+COPY requirements.txt pyproject.toml ./
+RUN pip install --no-cache-dir -i ${PIP_INDEX_URL} -r requirements.txt && \
+    pip install --no-cache-dir -i ${PIP_INDEX_URL} -e .
+
+# Application source
+COPY packages ./packages
+COPY agents ./agents
+COPY apps ./apps
+
+RUN mkdir -p data
+EXPOSE 8000
+
+CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

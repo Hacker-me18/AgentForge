@@ -1,0 +1,18 @@
+# AgentOS Studio — Web image (build the SPA, serve it with nginx)
+FROM node:20-alpine AS build
+
+# Use a faster registry if available:
+#   docker build -f Dockerfile.web --build-arg NPM_REGISTRY=https://registry.npmmirror.com .
+ARG NPM_REGISTRY=https://registry.npmjs.org
+
+WORKDIR /app
+COPY apps/web/package*.json ./
+RUN npm install --no-audit --no-fund --registry=${NPM_REGISTRY}
+
+COPY apps/web/ ./
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80

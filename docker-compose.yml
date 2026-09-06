@@ -1,0 +1,40 @@
+# AgentOS Studio — one-command local stack.
+#
+#   docker compose build            # build api + web (+ sandbox image via profile)
+#   docker compose up               # http://localhost:3000 (web → api proxied)
+#
+# The sandbox service only builds the image the python.execute tool / Sandbox
+# page run on the host; give it the `build` profile when you need it:
+#   docker compose --profile build build sandbox
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: agentos-api:0.1
+    ports:
+      - "8000:8000"
+    environment:
+      AGENTOS_DATABASE_URL: sqlite+aiosqlite:///./data/agentos.db
+      AGENTOS_LOG_LEVEL: INFO
+    volumes:
+      - ./data:/app/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: agentos-web:0.1
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
+  sandbox:
+    profiles: ["build"]
+    build:
+      context: .
+      dockerfile: docker/sandbox.Dockerfile
+    image: agentos-sandbox:0.1
+    command: ["sh", "-c", "echo 'agentos-sandbox image built'; tail -f /dev/null"]
