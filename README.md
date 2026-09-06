@@ -11,7 +11,12 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11-blue" alt="python 3.11"/>
+  <img src="https://img.shields.io/badge/FastAPI-0.1-009688" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/React-18-61DAFB" alt="React 18"/>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT"/>
+  <img src="https://img.shields.io/badge/tests-51%20passed-brightgreen" alt="51 tests passing"/>
+  <img src="https://img.shields.io/badge/lint-ruff%20clean-blueviolet" alt="ruff clean"/>
+  <img src="https://img.shields.io/badge/types-mypy%20clean-orange" alt="mypy clean"/>
 </p>
 
 ---
