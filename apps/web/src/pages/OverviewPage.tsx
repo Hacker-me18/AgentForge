@@ -1,39 +1,130 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { api } from "../lib/api";
 import type { Approval, RunStatus, Stats, TraceEvent } from "../lib/types";
 import { fmtAgo, fmtMoney, fmtNumber, fmtTime } from "../lib/format";
 import { useFetch } from "../lib/useFetch";
-import { PageHeader, Card, Stat, Button, Loading, ErrorState, EmptyState } from "../components/ui";
+import {
+  PageHeader,
+  Card,
+  Button,
+  Loading,
+  ErrorState,
+  EmptyState,
+  Skeleton,
+  StatusBadge,
+  Chip,
+  cx,
+} from "../components/ui";
+import type { Tone } from "../components/ui";
 import { HBar, TimelineBars } from "../components/charts";
 
-const EVENT_LABEL: Record<string, { label: string; color: string }> = {
-  "run.started": { label: "run started", color: "text-gray-300" },
-  "run.completed": { label: "run completed", color: "text-emerald-400" },
-  "run.failed": { label: "run failed", color: "text-rose-400" },
-  "llm.request": { label: "llm request", color: "text-violet-400" },
-  "llm.response": { label: "llm response", color: "text-violet-300" },
-  "tool.request": { label: "tool called", color: "text-sky-400" },
-  "tool.completed": { label: "tool completed", color: "text-sky-300" },
-  "policy.checked": { label: "policy checked", color: "text-amber-400" },
-  "approval.requested": { label: "approval requested", color: "text-amber-300" },
-  "approval.decided": { label: "approval decided", color: "text-emerald-300" },
-  "sandbox.started": { label: "sandbox started", color: "text-orange-400" },
-  "checkpoint.created": { label: "checkpoint saved", color: "text-gray-400" },
+/* Warm-organic event legend: ochre = model I/O, olive = tool work + success,
+ * terracotta = guardrails / human decisions, rust = failure, sand = lifecycle. */
+const EVENT_META: Record<string, { label: string; tone: Tone }> = {
+  "run.prepared": { label: "run prepared", tone: "neutral" },
+  "run.started": { label: "run started", tone: "neutral" },
+  "run.completed": { label: "run completed", tone: "olive" },
+  "run_finalized": { label: "run finalized", tone: "neutral" },
+  "context.created": { label: "context built", tone: "neutral" },
+  "llm.request": { label: "llm request", tone: "ochre" },
+  "llm.response": { label: "llm response", tone: "ochre" },
+  "tool.started": { label: "tool started", tone: "olive" },
+  "tool.request": { label: "tool requested", tone: "olive" },
+  "tool.completed": { label: "tool completed", tone: "olive" },
+  "tool.failed": { label: "tool failed", tone: "rust" },
+  "observation": { label: "observation", tone: "neutral" },
+  "policy.checked": { label: "policy checked", tone: "terra" },
+  "approval.requested": { label: "approval requested", tone: "terra" },
+  "approval.decided": { label: "approval decided", tone: "olive" },
+  "checkpoint.created": { label: "checkpoint saved", tone: "neutral" },
 };
 
-function eventMeta(type: string) {
-  return EVENT_LABEL[type] ?? { label: type.replace(/\./g, " "), color: "text-gray-400" };
+function eventMeta(type: string): { label: string; tone: Tone } {
+  return EVENT_META[type] ?? { label: type.replace(/[._]/g, " "), tone: "neutral" };
 }
 
 const STATUS_ORDER: RunStatus[] = [
-  "completed",
   "running",
   "waiting_approval",
   "pending",
+  "completed",
   "failed",
   "cancelled",
   "budget_exceeded",
 ];
+
+/* Warm muted text used on the sand hero band. */
+const bandLabel = "text-xs font-medium text-[#8A7C69]";
+const bandSub = "mt-1.5 text-xs leading-snug text-[#8A7C69]";
+
+function OverviewSkeleton() {
+  return (
+    <>
+      <div className="overflow-hidden rounded-lg border border-edge bg-sand/60 shadow-card">
+        <div className="grid grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className={cx("px-5 py-4", i > 0 && "border-l border-[#DECBAE]/80")}>
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="mt-2.5 h-7 w-14" />
+              <Skeleton className="mt-2.5 h-3 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="rounded-lg border border-edge bg-panel p-4 shadow-card">
+          <Skeleton className="h-4 w-28" />
+          <div className="mt-6 flex h-40 items-end gap-2">
+            {Array.from({ length: 12 }, (_, i) => (
+              <Skeleton key={i} className="flex-1 rounded-md" style={{ height: `${10 + ((i * 19) % 90)}px` }} />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-edge bg-panel p-4 shadow-card">
+            <Skeleton className="h-4 w-24" />
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 6 }, (_, i) => (
+                <Skeleton key={i} className="h-3.5 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** A single metric in the sand hero band. Label + big value + optional caption. */
+function Metric({
+  label,
+  value,
+  sub,
+  className,
+  valueClass,
+}: {
+  label: string;
+  value: ReactNode;
+  sub?: ReactNode;
+  className?: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className={cx("px-5 py-4", className)}>
+      <div className={bandLabel}>{label}</div>
+      <div
+        className={cx(
+          "mt-1 text-[25px] font-semibold leading-none tracking-tight tabular-nums",
+          valueClass ?? "text-ink",
+        )}
+      >
+        {value}
+      </div>
+      {sub && <div className={bandSub}>{sub}</div>}
+    </div>
+  );
+}
 
 export default function OverviewPage() {
   const stats = useFetch<Stats>("/api/stats");
@@ -63,158 +154,175 @@ export default function OverviewPage() {
     if (!s) return [];
     const a = s.activity;
     return [
-      ["llm requests", a.llm_requests, "text-violet-400"],
-      ["tool calls", a.tool_calls, "text-sky-400"],
-      ["policy checks", a.policy_checks, "text-amber-400"],
-      ["approvals", a.approval_requests, "text-amber-300"],
-      ["sandbox runs", a.sandbox_starts, "text-orange-400"],
-      ["checkpoints", a.checkpoints, "text-gray-400"],
+      ["llm requests", a.llm_requests],
+      ["tool calls", a.tool_calls],
+      ["policy checks", a.policy_checks],
+      ["approvals", a.approval_requests],
+      ["checkpoints", a.checkpoints],
+      ["sandbox runs", a.sandbox_starts],
     ] as const;
   }, [s]);
 
   const toolList = useMemo(
-    () =>
-      Object.entries(s?.tools ?? {}).sort((a, b) => b[1] - a[1]),
+    () => Object.entries(s?.tools ?? {}).sort((a, b) => b[1] - a[1]),
     [s],
   );
   const toolMax = toolList.length ? toolList[0][1] : 1;
+
+  const byStatus = useMemo(
+    () => STATUS_ORDER.filter((st) => (s?.runs.by_status[st] ?? 0) > 0),
+    [s],
+  );
 
   return (
     <div>
       <PageHeader
         title="Overview"
-        desc="Live view of the platform — every number below comes from real runs through the agent runtime."
+        desc="Every number below comes from real runs through the agent runtime — deterministic mock LLM, reproducible end to end."
       />
 
       {stats.loading ? (
-        <Loading />
+        <OverviewSkeleton />
       ) : stats.error ? (
         <ErrorState message={stats.error} onRetry={stats.reload} />
       ) : s ? (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <Stat label="Runs" value={fmtNumber(s.runs.total)} accent="sky"
-              sub={`${fmtNumber(s.runs.completed)} completed`} />
-            <Stat label="Success rate" value={`${s.runs.success_rate}%`} accent="emerald" />
-            <Stat label="Tool calls" value={fmtNumber(s.activity.tool_calls)} accent="violet" />
-            <Stat label="Tokens" value={fmtNumber(s.usage.total_tokens)} accent="gray"
-              sub={`${fmtNumber(s.usage.input_tokens)} in · ${fmtNumber(s.usage.output_tokens)} out`} />
-            <Stat label="Est. spend" value={fmtMoney(s.usage.cost)} accent="amber"
-              sub="mock provider, real pricing model" />
+          {/* Sand hero band — one warm panel, hairline-divided metrics. */}
+          <div className="overflow-hidden rounded-lg border border-edge bg-sand/60 shadow-card">
+            <div className="grid grid-cols-2 lg:grid-cols-5">
+              <Metric
+                label="Runs"
+                value={fmtNumber(s.runs.total)}
+                valueClass="text-brand"
+                sub={`${fmtNumber(s.runs.completed)} completed`}
+              />
+              <Metric className="border-l border-[#DECBAE]/80" label="Success rate" value={`${s.runs.success_rate}%`} />
+              <Metric className="border-l border-[#DECBAE]/80" label="Tool calls" value={fmtNumber(s.activity.tool_calls)} />
+              <Metric
+                className="border-l border-[#DECBAE]/80"
+                label="Tokens"
+                value={fmtNumber(s.usage.total_tokens)}
+                sub={`${fmtNumber(s.usage.input_tokens)} in · ${fmtNumber(s.usage.output_tokens)} out`}
+              />
+              <Metric className="border-l border-[#DECBAE]/80" label="Est. spend" value={fmtMoney(s.usage.cost)} sub="at mock pricing" />
+            </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <Card title="Activity" subtitle="Lifecycle events emitted during runs" className="xl:col-span-1">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {activity.map(([label, value, color]) => (
-                  <div key={label} className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs text-gray-500">{label}</span>
-                    <span className={`font-mono text-sm ${color}`}>{fmtNumber(value)}</span>
-                  </div>
-                ))}
+          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            {/* Left: the story of recent runs. */}
+            <div className="min-w-0 space-y-4">
+              <Card title="Runs over time" subtitle="Agent runs per day">
+                <TimelineBars points={s.runs.timeline} />
+              </Card>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Card title="Tool usage" subtitle="Calls by tool">
+                  {toolList.length === 0 ? (
+                    <EmptyState title="No tool calls yet" />
+                  ) : (
+                    <div className="py-1">
+                      {toolList.map(([name, count]) => (
+                        <HBar key={name} label={name} value={count} max={toolMax} />
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card title="Run status" subtitle="Distribution across the fleet">
+                  {byStatus.length === 0 ? (
+                    <EmptyState title="No runs yet" hint="Launch one from the Agents page." />
+                  ) : (
+                    <div className="divide-y divide-edge/80">
+                      {byStatus.map((st) => (
+                        <div key={st} className="flex items-center justify-between py-1.5">
+                          <StatusBadge status={st} />
+                          <span className="font-mono text-xs text-ink/80 tabular-nums">
+                            {fmtNumber(s.runs.by_status[st] ?? 0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
               </div>
-            </Card>
+            </div>
 
-            <Card
-              title="Runs over time"
-              subtitle="Agent runs per day"
-              className="xl:col-span-2"
-            >
-              <TimelineBars points={s.runs.timeline} />
-            </Card>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <Card title="Tool usage" subtitle="Calls by tool">
-              {toolList.length === 0 && <EmptyState title="No tool calls yet" />}
-              {toolList.map(([name, count]) => (
-                <HBar key={name} label={name} value={count} max={toolMax} barClass="bg-sky-500" />
-              ))}
-            </Card>
-
-            <Card
-              title="Human approvals"
-              subtitle={pending.length ? `${pending.length} waiting` : "queue clear"}
-              right={
-                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/30">
-                  {pending.length} pending
-                </span>
-              }
-            >
-              {approvals.loading ? (
-                <Loading />
-              ) : pending.length === 0 ? (
-                <EmptyState title="No pending approvals" hint="Governed tools (e.g. database.write) appear here when an agent needs your decision." />
-              ) : (
-                <div className="space-y-2">
-                  {pending.map((a) => (
-                    <div key={a.id} className="rounded-lg border border-amber-500/20 bg-gray-950/40 p-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate font-mono text-xs text-gray-200">{a.tool_name}</span>
-                            <span className="rounded bg-amber-500/15 px-1.5 py-px text-[10px] font-medium text-amber-300">
-                              {a.risk_level} risk
-                            </span>
+            {/* Right: decisions + activity + live feed. */}
+            <div className="space-y-4">
+              <Card
+                title="Human approvals"
+                subtitle={pending.length ? "Waiting on your decision" : "Queue clear"}
+              >
+                {approvals.loading ? (
+                  <Loading />
+                ) : pending.length === 0 ? (
+                  <div className="rounded-md border border-clay/70 bg-sand/40 px-3 py-2.5 text-xs leading-relaxed text-[#8A7C69]">
+                    Governed tools (e.g. <code className="font-mono">database.write</code>) pause a run here
+                    for a decision.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {pending.map((a) => (
+                      <div key={a.id} className="rounded-lg border border-brand/40 bg-brand/8 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-mono text-xs font-medium text-ink">{a.tool_name}</div>
+                            <div className="mt-0.5 truncate text-[11px] text-[#8A7C69]">
+                              run {a.run_id} · {fmtTime(a.created_at)}
+                            </div>
                           </div>
-                          <div className="mt-0.5 text-[10.5px] text-gray-500">
-                            run {a.run_id} · {fmtTime(a.created_at)}
+                          <div className="flex shrink-0 gap-1.5">
+                            <Button kind="success" size="sm" disabled={acting} onClick={() => void decide(a.id, true)}>
+                              Approve
+                            </Button>
+                            <Button kind="danger" size="sm" disabled={acting} onClick={() => void decide(a.id, false)}>
+                              Reject
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex shrink-0 gap-1.5">
-                          <Button kind="success" disabled={acting} onClick={() => void decide(a.id, true)} className="px-2 py-1 text-xs">
-                            Approve
-                          </Button>
-                          <Button kind="danger" disabled={acting} onClick={() => void decide(a.id, false)} className="px-2 py-1 text-xs">
-                            Reject
-                          </Button>
-                        </div>
+                        <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap rounded-md bg-panel px-2.5 py-2 font-mono text-[11px] leading-relaxed text-[#6E624F] ring-1 ring-inset ring-clay/60">
+                          {JSON.stringify(a.arguments, null, 2)}
+                        </pre>
                       </div>
-                      <pre className="mt-1.5 max-h-20 overflow-auto rounded bg-gray-900/70 p-1.5 whitespace-pre-wrap font-mono text-[10px] text-gray-500">
-                        {JSON.stringify(a.arguments, null, 2)}
-                      </pre>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              <Card title="Activity" subtitle="Lifecycle events emitted during runs">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-1">
+                  {activity.map(([label, value]) => (
+                    <div key={label} className="flex items-baseline justify-between gap-2 border-b border-edge/70 py-1">
+                      <span className="text-xs text-[#8A7C69]">{label}</span>
+                      <span className="font-mono text-[13px] text-ink tabular-nums">{fmtNumber(value)}</span>
                     </div>
                   ))}
                 </div>
-              )}
-            </Card>
-          </div>
+              </Card>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <Card title="Run status" subtitle="Distribution across the fleet">
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS_ORDER.filter((st) => s.runs.by_status[st]).map((st) => (
-                  <div key={st} className="flex items-center justify-between rounded-lg bg-gray-950/40 px-3 py-2">
-                    <span className="text-xs capitalize text-gray-400">{st.replace("_", " ")}</span>
-                    <span className="font-mono text-sm text-gray-100">{fmtNumber(s.runs.by_status[st] ?? 0)}</span>
-                  </div>
-                ))}
-                {!STATUS_ORDER.some((st) => s.runs.by_status[st]) && (
-                  <EmptyState title="No runs yet" hint="Launch one from the Agents page." />
+              <Card title="Recent events" subtitle="Live trace feed" pad={false}>
+                {events.loading ? (
+                  <div className="p-4"><Loading /></div>
+                ) : (events.data ?? []).length === 0 ? (
+                  <EmptyState title="No events yet" />
+                ) : (
+                  <ul className="divide-y divide-edge/80">
+                    {(events.data ?? []).slice(0, 12).map((e) => {
+                      const meta = eventMeta(e.type);
+                      return (
+                        <li key={e.id} className="flex items-center gap-2.5 px-4 py-[7px]">
+                          <Chip tone={meta.tone} label={meta.label} />
+                          <span className="min-w-0 truncate font-mono text-[11px] text-[#A0927C]">{e.run_id}</span>
+                          <span className="ml-auto shrink-0 text-[11px] text-[#A0927C] tabular-nums">
+                            {fmtAgo(e.timestamp)}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
-              </div>
-            </Card>
-
-            <Card title="Recent events" subtitle="Live trace feed">
-              {events.loading ? (
-                <Loading />
-              ) : (events.data ?? []).length === 0 ? (
-                <EmptyState title="No events yet" />
-              ) : (
-                <ul className="divide-y divide-gray-800/60">
-                  {(events.data ?? []).slice(0, 14).map((e) => {
-                    const meta = eventMeta(e.type);
-                    return (
-                      <li key={e.id} className="flex items-center gap-2 py-1.5 text-xs">
-                        <span className={`w-28 shrink-0 font-mono ${meta.color}`}>{meta.label}</span>
-                        <span className="truncate font-mono text-gray-600">{e.run_id}</span>
-                        <span className="ml-auto shrink-0 text-[10px] text-gray-600">{fmtAgo(e.timestamp)}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </Card>
+              </Card>
+            </div>
           </div>
         </>
       ) : null}

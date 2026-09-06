@@ -1,10 +1,19 @@
 import { useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import type { Run, RunStatus } from "../lib/types";
 import { fmtAgo, fmtCost, fmtNumber } from "../lib/format";
 import { useFetch } from "../lib/useFetch";
 import { Drawer } from "../components/Drawer";
 import { RunView } from "../components/RunView";
-import { PageHeader, StatusBadge, Loading, ErrorState, EmptyState, cx } from "../components/ui";
+import {
+  PageHeader,
+  StatusBadge,
+  TableSkeleton,
+  ErrorState,
+  EmptyState,
+  inputCls,
+  cx,
+} from "../components/ui";
 
 const FILTERS: Array<RunStatus | "all"> = [
   "all",
@@ -52,75 +61,84 @@ export default function RunsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search task / run id…"
-            className="w-64 rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-gray-200 placeholder:text-gray-600 focus:border-sky-500 focus:outline-none"
+            aria-label="Search runs"
+            className={cx(inputCls, "w-64")}
           />
         }
       />
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by status">
         {FILTERS.map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
+            aria-pressed={filter === f}
             className={cx(
-              "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
+              "inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors",
               filter === f
-                ? "bg-gray-200 text-gray-900"
-                : "bg-gray-800/60 text-gray-400 hover:bg-gray-800 hover:text-gray-200",
+                ? "bg-[#E1D3BE] text-ink ring-1 ring-inset ring-clay/80"
+                : "text-[#7C7160] hover:bg-sand/70 hover:text-ink",
             )}
           >
             {f === "all" ? "all" : f.replace("_", " ")}
-            <span className="ml-1.5 opacity-60">{f === "all" ? runs.data?.length ?? 0 : counts.get(f) ?? 0}</span>
+            <span className={filter === f ? "opacity-60" : "opacity-70"}>
+              {f === "all" ? runs.data?.length ?? 0 : counts.get(f) ?? 0}
+            </span>
           </button>
         ))}
       </div>
 
       {runs.loading ? (
-        <Loading />
+        <TableSkeleton rows={8} />
       ) : runs.error ? (
         <ErrorState message={runs.error} onRetry={runs.reload} />
       ) : filtered.length === 0 ? (
         <EmptyState title="No runs match" hint="Adjust the filter or start a run from the Agents page." />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-800">
+        <div className="overflow-x-auto rounded-lg border border-edge">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-900 text-[11px] uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Run</th>
-                <th className="px-3 py-2 font-medium">Agent</th>
-                <th className="px-3 py-2 font-medium">Task / Answer</th>
-                <th className="px-3 py-2 text-right font-medium">Steps</th>
-                <th className="px-3 py-2 text-right font-medium">Cost</th>
-                <th className="px-3 py-2 text-right font-medium">When</th>
+            <thead>
+              <tr className="border-b border-edge text-[11px] font-medium text-[#8A7C69]">
+                <th scope="col" className="px-3 py-2 font-medium">Status</th>
+                <th scope="col" className="px-3 py-2 font-medium">Run</th>
+                <th scope="col" className="px-3 py-2 font-medium">Agent</th>
+                <th scope="col" className="px-3 py-2 font-medium">Task / Answer</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Steps</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Cost</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">When</th>
+                <th scope="col" className="w-8 px-2 py-2"><span className="sr-only">Open</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/70 bg-gray-900/40">
+            <tbody className="divide-y divide-edge/60 bg-panel/30">
               {filtered.map((run) => (
                 <tr
                   key={run.run_id}
                   onClick={() => setActive(run)}
-                  className="cursor-pointer transition-colors hover:bg-gray-800/50"
+                  className="cursor-pointer transition-colors hover:bg-raised/40"
                 >
-                  <td className="px-3 py-2">
-                    <StatusBadge status={run.status} />
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-400">{run.run_id}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-300">{run.agent_id}</td>
+                  <td className="px-3 py-2"><StatusBadge status={run.status} /></td>
+                  <td className="px-3 py-2 font-mono text-xs text-sub">{run.run_id}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-sub">{run.agent_id}</td>
                   <td className="max-w-md px-3 py-2">
-                    <div className="truncate text-xs text-gray-300">{run.task}</div>
+                    <div className="truncate text-xs text-fg">{run.task}</div>
                     {run.answer && (
-                      <div className="mt-0.5 line-clamp-1 text-xs text-gray-600">{run.answer}</div>
+                      <div className="mt-0.5 line-clamp-1 text-xs text-faint">{run.answer}</div>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs text-gray-400">
-                    {fmtNumber(run.steps)}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs text-emerald-400">
-                    {fmtCost(run.cost)}
-                  </td>
-                  <td className="px-3 py-2 text-right text-xs text-gray-500">
-                    {fmtAgo(run.created_at)}
+                  <td className="px-3 py-2 text-right font-mono text-xs text-fg">{fmtNumber(run.steps)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-xs text-fg">{fmtCost(run.cost)}</td>
+                  <td className="px-3 py-2 text-right text-xs text-faint">{fmtAgo(run.created_at)}</td>
+                  <td className="px-2 py-2 text-right">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActive(run);
+                      }}
+                      aria-label={`Open run ${run.run_id}`}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-faint transition-colors hover:bg-raised hover:text-ink"
+                    >
+                      <ChevronRight aria-hidden className="h-4 w-4" />
+                    </button>
                   </td>
                 </tr>
               ))}

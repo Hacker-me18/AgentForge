@@ -1,12 +1,12 @@
-# AgentOS Studio(中文)
+# AgentForge Studio(中文)
 
 > English: [`README.md`](../README.md)
 
-AgentOS Studio 是一个开源的 Agent 运行时、治理与评测平台。Python 后端、React Web 控制台,LLM 提供方可切换(默认完全离线)。
+AgentForge Studio 是一个开源的 Agent 运行时、治理与评测平台。Python 后端、React Web 控制台,LLM 提供方可切换(默认完全离线)。
 
 ## 概述
 
-AgentOS Studio 提供「让 Agent 用工具、受治理、可观测、可评测」所需的基础设施,并按可独立复用的 `packages/*` 模块组织,由 FastAPI 服务与离线评测运行器组合使用:
+AgentForge Studio 提供「让 Agent 用工具、受治理、可观测、可评测」所需的基础设施,并按可独立复用的 `packages/*` 模块组织,由 FastAPI 服务与离线评测运行器组合使用:
 
 - **Agent 运行时**(`packages/runtime`):带 checkpoint 的执行循环——对话、规划工具调用、审批暂停、每步保存状态。
 - **工具网关**(`packages/tools`、`packages/policy`):每次工具调用先经过 `ToolGateway` 与策略检查再执行。受治理的工具(如 `database.write`)会让整个运行**暂停**,直到有人在界面里批准或拒绝。

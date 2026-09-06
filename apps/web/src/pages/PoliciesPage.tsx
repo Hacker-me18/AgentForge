@@ -2,12 +2,27 @@ import { useState } from "react";
 import { api } from "../lib/api";
 import type { PolicyAction, PolicyRule, ToolInfo } from "../lib/types";
 import { useFetch } from "../lib/useFetch";
-import { PageHeader, PolicyBadge, Loading, ErrorState, EmptyState, cx } from "../components/ui";
+import {
+  PageHeader,
+  PolicyBadge,
+  Stat,
+  Notice,
+  TableSkeleton,
+  ErrorState,
+  EmptyState,
+  cx,
+} from "../components/ui";
 
 const ACTION_INFO: Record<PolicyAction, string> = {
   allow: "Runs without interruption.",
   deny: "Blocked before it can execute.",
   require_approval: "Pauses the run and asks a human.",
+};
+
+const SELECTED_STYLE: Record<PolicyAction, string> = {
+  allow: "bg-olive/20 text-olivehi ring-1 ring-inset ring-olive/50",
+  deny: "bg-rust/15 text-rust ring-1 ring-inset ring-rust/45",
+  require_approval: "bg-brand/15 text-brandhi ring-1 ring-inset ring-brand/45",
 };
 
 function SelectAction({
@@ -21,21 +36,18 @@ function SelectAction({
 }) {
   const opts: PolicyAction[] = ["allow", "deny", "require_approval"];
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1" role="group" aria-label="Policy action">
       {opts.map((o) => (
         <button
           key={o}
           disabled={disabled}
           onClick={() => onSelect(o)}
+          aria-pressed={value === o}
           className={cx(
-            "rounded-md px-2 py-1 text-[11px] font-medium transition-colors disabled:opacity-60",
+            "h-6 rounded-md px-2 text-[11px] font-medium transition-colors disabled:opacity-60",
             value === o
-              ? o === "allow"
-                ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40"
-                : o === "deny"
-                  ? "bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40"
-                  : "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40"
-              : "bg-gray-800/60 text-gray-500 hover:text-gray-300",
+              ? SELECTED_STYLE[o]
+              : "bg-raised/50 text-sub hover:bg-raised hover:text-fg",
           )}
         >
           {o.replace("_", " ")}
@@ -49,7 +61,7 @@ export default function PoliciesPage() {
   const rules = useFetch<PolicyRule[]>("/api/policies");
   const tools = useFetch<ToolInfo[]>("/api/tools");
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   const toolName = (name: string) =>
     tools.data?.find((t) => t.name === name)?.description ?? "";
@@ -61,9 +73,12 @@ export default function PoliciesPage() {
     try {
       await api.upsertPolicy(rule);
       rules.reload();
-      setNotice(`Saved: ${rule.tool} → ${rule.action.replace("_", " ")}`);
+      setNotice({
+        tone: "success",
+        text: `Saved: ${rule.tool} → ${rule.action.replace("_", " ")}`,
+      });
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : String(e));
+      setNotice({ tone: "error", text: e instanceof Error ? e.message : String(e) });
     } finally {
       setSaving(false);
     }
@@ -83,61 +98,47 @@ export default function PoliciesPage() {
       />
 
       <div className="mb-4 grid grid-cols-3 gap-3">
-        {[
-          ["allow", summary.allow, "text-emerald-400"],
-          ["deny", summary.deny, "text-rose-400"],
-          ["requires approval", summary.review, "text-amber-400"],
-        ].map(([label, count, color]) => (
-          <div key={label} className="rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3">
-            <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">{label}</div>
-            <div className={`mt-1 text-2xl font-semibold ${color}`}>{count}</div>
-          </div>
-        ))}
+        <Stat label="Allow" value={summary.allow} valueClass="text-olivehi" />
+        <Stat label="Deny" value={summary.deny} valueClass="text-rust" />
+        <Stat label="Requires approval" value={summary.review} valueClass="text-brandhi" />
       </div>
 
       {notice && (
-        <div
-          className={cx(
-            "mb-4 rounded-lg border px-4 py-2 text-sm",
-            notice.startsWith("Saved")
-              ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
-              : "border-rose-500/30 bg-rose-500/5 text-rose-300",
-          )}
-        >
-          {notice}
+        <div className="mb-4">
+          <Notice tone={notice.tone}>{notice.text}</Notice>
         </div>
       )}
 
       {rules.loading ? (
-        <Loading />
+        <TableSkeleton rows={6} />
       ) : rules.error ? (
         <ErrorState message={rules.error} onRetry={rules.reload} />
       ) : (rules.data ?? []).length === 0 ? (
         <EmptyState title="No rules" />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-800">
+        <div className="overflow-x-auto rounded-lg border border-edge">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-900 text-[11px] uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">Tool</th>
-                <th className="hidden px-4 py-2 font-medium md:table-cell">Description</th>
-                <th className="px-4 py-2 font-medium">Policy</th>
-                <th className="px-4 py-2 font-medium">Change</th>
+            <thead>
+              <tr className="border-b border-edge text-[11px] font-medium text-[#8A7C69]">
+                <th scope="col" className="px-4 py-2 font-medium">Tool</th>
+                <th scope="col" className="px-4 py-2 font-medium">Description</th>
+                <th scope="col" className="px-4 py-2 font-medium">Policy</th>
+                <th scope="col" className="px-4 py-2 font-medium">Change</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/70 bg-gray-900/40">
+            <tbody className="divide-y divide-edge/60 bg-panel/30">
               {(rules.data ?? []).map((rule) => (
-                <tr key={rule.tool} className="hover:bg-gray-800/30">
+                <tr key={rule.tool} className="transition-colors hover:bg-raised/30">
                   <td className="px-4 py-2.5">
-                    <div className="font-mono text-xs font-medium text-gray-100">{rule.tool}</div>
-                    {rule.reason && <div className="text-[11px] text-gray-600">{rule.reason}</div>}
+                    <div className="font-mono text-xs font-medium text-fg">{rule.tool}</div>
+                    {rule.reason && <div className="mt-0.5 text-[11px] text-faint">{rule.reason}</div>}
                   </td>
-                  <td className="hidden max-w-sm px-4 py-2.5 text-xs text-gray-500 md:table-cell">
+                  <td className="max-w-sm px-4 py-2.5 text-xs text-sub">
                     {toolDescriptions.get(rule.tool) ?? toolName(rule.tool)}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2.5 align-top">
                     <PolicyBadge action={rule.action} />
-                    <div className="mt-1 max-w-[160px] text-[11px] leading-snug text-gray-600">
+                    <div className="mt-1 max-w-[170px] text-[11px] leading-snug text-faint">
                       {ACTION_INFO[rule.action]}
                     </div>
                   </td>

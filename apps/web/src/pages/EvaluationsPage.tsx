@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { RotateCw } from "lucide-react";
 import { api } from "../lib/api";
 import type { EvalReport } from "../lib/types";
 import { useFetch } from "../lib/useFetch";
-import { PageHeader, Card, Stat, Button, Loading, ErrorState, Spinner } from "../components/ui";
+import { PageHeader, Card, Stat, Button, Notice, Loading, ErrorState } from "../components/ui";
 import { CompareBar } from "../components/charts";
 
 const DIMENSIONS: Array<[string, string]> = [
@@ -23,16 +24,17 @@ export default function EvaluationsPage() {
   const fetch = useFetch<EvalReport>("/api/eval/report/eval");
   const [report, setReport] = useState<EvalReport | null>(null);
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const data = report ?? fetch.data;
 
   const rerun = async () => {
     setRunning(true);
+    setError(null);
     try {
       setReport(await api.rerunEvalReport());
     } catch (e) {
-      // surface via the notice below
-      window.alert(e instanceof Error ? e.message : String(e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setRunning(false);
     }
@@ -47,16 +49,17 @@ export default function EvaluationsPage() {
         desc="Offline scoring of the research agent against a fixed dataset — task success, tool-selection accuracy, evidence, policy compliance, latency, cost and step economy. Re-runs are deterministic and regenerate the on-disk report."
         actions={
           <Button onClick={() => void rerun()} disabled={running}>
-            {running ? (
-              <>
-                <Spinner /> Evaluating…
-              </>
-            ) : (
-              "Re-run evaluation"
-            )}
+            <RotateCw aria-hidden className={running ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+            {running ? "Evaluating…" : "Re-run evaluation"}
           </Button>
         }
       />
+
+      {error && (
+        <div className="mb-4">
+          <Notice tone="error">Re-run failed: {error}</Notice>
+        </div>
+      )}
 
       {loading ? (
         <Loading />
@@ -65,11 +68,11 @@ export default function EvaluationsPage() {
       ) : data ? (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <Stat label="Cases" value={data.case_count} accent="sky" sub={`spec ${data.spec}`} />
-            <Stat label="Overall" value={`${Math.round((data.aggregates.overall ?? 0) * 100)}%`} accent="emerald" />
-            <Stat label="Avg latency" value={`${data.raw.avg_latency_ms.toFixed(2)} ms`} accent="violet" />
-            <Stat label="Avg cost" value={`$${data.raw.avg_cost.toFixed(6)}`} accent="amber" />
-            <Stat label="Avg steps" value={data.raw.avg_steps.toFixed(1)} accent="gray" />
+            <Stat label="Cases" value={data.case_count} sub={`spec ${data.spec}`} />
+            <Stat label="Overall" value={`${Math.round((data.aggregates.overall ?? 0) * 100)}%`} />
+            <Stat label="Avg latency" value={`${data.raw.avg_latency_ms.toFixed(2)} ms`} />
+            <Stat label="Avg cost" value={`$${data.raw.avg_cost.toFixed(6)}`} />
+            <Stat label="Avg steps" value={data.raw.avg_steps.toFixed(1)} />
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -82,6 +85,7 @@ export default function EvaluationsPage() {
                   b={1}
                   aLabel="score"
                   bLabel="ideal"
+                  aClass="bg-olive"
                 />
               ))}
             </Card>
@@ -91,17 +95,17 @@ export default function EvaluationsPage() {
               subtitle={`${data.raw.completed}/${data.raw.total} completed`}
               pad={false}
             >
-              <ul className="max-h-[420px] divide-y divide-gray-800/60 overflow-y-auto">
+              <ul className="max-h-[420px] divide-y divide-edge/60 overflow-y-auto">
                 {data.results.slice(0, 200).map((c) => {
                   const id = String(c.case_id ?? "");
                   const ok = Number(c.task_success ?? 0) >= 1;
                   const total = Number(c.overall ?? 0);
                   return (
                     <li key={id} className="flex items-center gap-3 px-4 py-1.5 text-xs">
-                      <span className={ok ? "text-emerald-400" : "text-amber-400"}>●</span>
-                      <span className="w-24 shrink-0 font-mono text-gray-400">{id}</span>
-                      <span className="font-mono text-[10px] text-gray-600">status: {String(c.status)}</span>
-                      <span className="ml-auto w-14 text-right font-mono text-gray-400">
+                      <span aria-hidden className={ok ? "text-olive" : "text-rust"}>●</span>
+                      <span className="w-24 shrink-0 font-mono text-sub">{id}</span>
+                      <span className="truncate font-mono text-[10px] text-faint">status: {String(c.status)}</span>
+                      <span className="ml-auto w-14 shrink-0 text-right font-mono text-sub">
                         {(total * 100).toFixed(0)}%
                       </span>
                     </li>

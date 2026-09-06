@@ -1,14 +1,17 @@
 // Dependency-free bar charts: horizontal usage bars + a vertical day histogram.
+// The single series colour is the pine brand accent; text never depends on it.
 
 import { cx } from "./ui";
 import type { TimelinePoint } from "../lib/types";
 
+/** One horizontal bar row. Numeric label + value are real text; the bar is
+ *  decorative and hidden from assistive tech. */
 export function HBar({
   label,
   value,
   max,
   format = (v) => String(v),
-  barClass = "bg-sky-500",
+  barClass = "bg-olive",
 }: {
   label: string;
   value: number;
@@ -18,43 +21,55 @@ export function HBar({
 }) {
   const pct = max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0;
   return (
-    <div className="flex items-center gap-3 py-[3px]">
-      <div className="w-40 truncate text-right font-mono text-xs text-gray-400">{label}</div>
-      <div className="h-4 flex-1 overflow-hidden rounded bg-gray-800/70">
-        <div
-          className={cx("h-full rounded transition-all", barClass)}
-          style={{ width: `${pct}%`, opacity: 0.35 + 0.65 * (value / max) }}
-        />
+    <div className="flex items-center gap-3 py-[4px]">
+      <div className="w-36 shrink-0 truncate text-right font-mono text-xs text-sub">{label}</div>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-raised">
+        <div aria-hidden className={cx("h-full rounded-full", barClass)} style={{ width: `${pct}%` }} />
       </div>
-      <div className="w-16 text-right font-mono text-xs text-gray-200">{format(value)}</div>
+      <div className="w-16 shrink-0 text-right font-mono text-xs text-fg tabular-nums">{format(value)}</div>
     </div>
   );
 }
 
 /** Vertical bars for the runs-per-day timeline. Labels are DD Mon. */
-export function TimelineBars({ points, color = "bg-sky-400" }: { points: TimelinePoint[]; color?: string }) {
+export function TimelineBars({
+  points,
+  color = "bg-olive",
+}: {
+  points: TimelinePoint[];
+  color?: string;
+}) {
   const max = Math.max(1, ...points.map((p) => p.runs));
   return (
-    <div className="flex h-36 items-end gap-1.5">
+    <div className="flex h-40 items-end gap-2">
       {points.length === 0 && (
-        <div className="flex h-full w-full items-center justify-center text-xs text-gray-600">
+        <div className="flex h-full w-full items-center justify-center text-xs text-sub">
           No runs recorded yet
         </div>
       )}
       {[...points].reverse().map((p) => {
         const [, mon, day] = p.day.split("-");
-        const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const months = [
+          "",
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ];
         const label = `${months[Number(mon)]} ${Number(day)}`;
         const h = Math.max(4, Math.round((p.runs / max) * 100));
         return (
-          <div key={p.day} className="group flex flex-1 flex-col justify-end items-center gap-1">
-            <span className="text-[10px] font-semibold text-gray-400">{p.runs}</span>
+          <div key={p.day} className="group flex flex-1 flex-col items-center justify-end gap-1.5">
+            <span className="text-[10px] font-medium tabular-nums text-sub">{p.runs}</span>
             <div
+              aria-hidden
               title={`${label} — ${p.runs} runs`}
-              className={cx("w-full max-w-[26px] rounded-t-md transition-colors", color)}
+              className={cx(
+                "w-full max-w-[26px] rounded-md rounded-b-sm transition-opacity",
+                color,
+                "group-hover:opacity-80",
+              )}
               style={{ height: `${h}px` }}
             />
-            <span className="truncate text-[9px] text-gray-600">{label}</span>
+            <span aria-hidden className="truncate text-[10px] text-faint">{label}</span>
           </div>
         );
       })}
@@ -62,7 +77,8 @@ export function TimelineBars({ points, color = "bg-sky-400" }: { points: Timelin
   );
 }
 
-/** Comparison row for evaluation dimensions (control vs treatment / target). */
+/** Two-sided comparison row (score vs ideal / control vs treatment). Both arms
+ *  draw neutral by default; colour is only ever semantic when passed in. */
 export function CompareBar({
   dimension,
   a,
@@ -70,6 +86,8 @@ export function CompareBar({
   aLabel,
   bLabel,
   format = (v: number) => `${Math.round(v * 100)}%`,
+  aClass = "bg-[#CDB79A]",
+  bClass = "bg-[#E5D8C5]",
 }: {
   dimension: string;
   a: number;
@@ -77,28 +95,33 @@ export function CompareBar({
   aLabel: string;
   bLabel: string;
   format?: (v: number) => string;
+  aClass?: string;
+  bClass?: string;
 }) {
   return (
     <div className="py-2">
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-xs font-medium text-gray-300">{dimension}</span>
-        <span className="font-mono text-[10px] text-gray-500">
-          {aLabel} <span className="text-gray-300">{format(a)}</span>
-          &nbsp;·&nbsp; {bLabel} <span className="text-gray-300">{format(b)}</span>
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <span className="truncate text-xs font-medium text-fg">{dimension}</span>
+        <span className="shrink-0 font-mono text-[10px] text-sub">
+          {aLabel} <span className="text-fg">{format(a)}</span>
+          <span aria-hidden className="mx-1.5 text-faint">·</span>
+          {bLabel} <span className="text-fg">{format(b)}</span>
         </span>
       </div>
-      <div className="flex items-center gap-1">
-        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
+      <div className="flex items-center gap-1.5">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-raised">
           <div
-            className="h-full rounded-full bg-emerald-500/80"
-            style={{ width: `${Math.round(Math.max(0, a) * 100)}%` }}
+            aria-hidden
+            className={cx("h-full rounded-full", aClass)}
+            style={{ width: `${Math.round(Math.max(0, Math.min(1, a)) * 100)}%` }}
           />
         </div>
-        <div className="mx-1 h-2.5 w-px bg-gray-700" />
-        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
+        <div aria-hidden className="h-3 w-px bg-edgehi" />
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-raised">
           <div
-            className="h-full rounded-full bg-sky-500/80"
-            style={{ width: `${Math.round(Math.max(0, b) * 100)}%` }}
+            aria-hidden
+            className={cx("h-full rounded-full", bClass)}
+            style={{ width: `${Math.round(Math.max(0, Math.min(1, b)) * 100)}%` }}
           />
         </div>
       </div>

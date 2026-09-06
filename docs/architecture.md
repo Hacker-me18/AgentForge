@@ -1,6 +1,6 @@
-# AgentOS Studio — Architecture
+# AgentForge Studio — Architecture
 
-AgentOS Studio is a layered, provider-agnostic agent runtime and evaluation
+AgentForge Studio is a layered, provider-agnostic agent runtime and evaluation
 platform. Each capability lives in its own `packages/*` module and is composed
 at runtime by the FastAPI service and by the offline evaluation runner: a live
 Studio run, a seeded demo run, and an offline evaluation case all execute the

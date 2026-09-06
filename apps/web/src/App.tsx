@@ -9,8 +9,9 @@ import PoliciesPage from "./pages/PoliciesPage";
 import EvaluationsPage from "./pages/EvaluationsPage";
 import ExperimentsPage from "./pages/ExperimentsPage";
 import SettingsPage from "./pages/SettingsPage";
+import { cx } from "./components/ui";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: Array<{ path: string; label: string; end?: boolean }> = [
   { path: "/", label: "Overview", end: true },
   { path: "/agents", label: "Agents" },
   { path: "/runs", label: "Runs" },
@@ -23,66 +24,81 @@ const NAV_ITEMS = [
   { path: "/settings", label: "Settings" },
 ];
 
+function Wordmark() {
+  return (
+    <NavLink to="/" end className="group flex shrink-0 items-center gap-2.5" aria-label="AgentForge Studio home">
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand font-serif text-[18px] font-semibold leading-none text-[#FBF6EE] shadow-card transition-colors group-hover:bg-brandhi">
+        a
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className="font-serif text-[16px] font-semibold tracking-tight text-ink">AgentForge</span>
+        <span className="mt-0.5 font-sans text-[10px] font-medium tracking-[0.14em] text-[#8A7C69]">
+          Studio
+        </span>
+      </span>
+    </NavLink>
+  );
+}
+
 export default function App() {
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-100">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-gray-800 bg-gray-900">
-        <div className="border-b border-gray-800 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/40">
-              <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 text-emerald-400" fill="currentColor" style={{ width: 18, height: 18 }}>
-                <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm7 3.2-1.2-2-1.6 1 1.2 2H7.2a.8.8 0 0 0 0 1.6h2.2L8.2 13l1.6 1 1.2-2 1.2 2 1.6-1-1.2-2.2h2.2a.8.8 0 1 0 0-1.6h-2.2l1.2-2-1.6-1-1.2 2z" transform="translate(0 -2)" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-[15px] font-bold tracking-tight text-gray-50">AgentOS</div>
-              <div className="text-[10.5px] text-gray-500">Agent Runtime · Eval · Studio</div>
-            </div>
+    <div className="min-h-screen bg-canvas font-sans text-fg">
+      <header className="sticky top-0 z-30 border-b border-edge bg-panel">
+        <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-4 px-5 lg:px-6">
+          <Wordmark />
+          <nav className="flex min-w-0 items-center gap-0.5" aria-label="Primary">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.end}
+                className={({ isActive }) =>
+                  cx(
+                    "relative rounded-lg px-2.5 py-1.5 text-[13px] transition-all duration-200",
+                    isActive
+                      ? "font-medium text-ink"
+                      : "text-[#7C7160] hover:bg-sand/50 hover:text-ink",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {item.label}
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-x-2.5 -bottom-[9px] h-[2px] rounded-full bg-brand"
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="ml-auto flex shrink-0 items-center gap-2 text-xs">
+            <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-olive" />
+            <span className="hidden font-medium text-olivehi sm:inline">API connected</span>
+            <span className="hidden font-mono text-[11px] text-[#A0927C] md:inline">
+              localhost:8000 · mock
+            </span>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-                  isActive
-                    ? "bg-gray-800 font-medium text-white"
-                    : "text-gray-400 hover:bg-gray-800/60 hover:text-gray-200"
-                }`
-              }
-            >
-              <span className="h-1 w-1 rounded-full bg-gray-600" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="border-t border-gray-800 px-5 py-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-600">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-            API connected
-          </div>
-          <div className="mt-0.5 font-mono text-[10px] text-gray-700">localhost:8000 · mock LLM</div>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl px-6 py-6">
-          <Routes>
-            <Route path="/" element={<OverviewPage />} />
-            <Route path="/agents" element={<AgentsPage />} />
-            <Route path="/runs" element={<RunsPage />} />
-            <Route path="/traces" element={<TracesPage />} />
-            <Route path="/tools" element={<ToolsPage />} />
-            <Route path="/sandbox" element={<SandboxPage />} />
-            <Route path="/policies" element={<PoliciesPage />} />
-            <Route path="/evaluations" element={<EvaluationsPage />} />
-            <Route path="/experiments" element={<ExperimentsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<OverviewPage />} />
-          </Routes>
-        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-[1200px] px-5 py-8 lg:px-6">
+        <Routes>
+          <Route path="/" element={<OverviewPage />} />
+          <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/runs" element={<RunsPage />} />
+          <Route path="/traces" element={<TracesPage />} />
+          <Route path="/tools" element={<ToolsPage />} />
+          <Route path="/sandbox" element={<SandboxPage />} />
+          <Route path="/policies" element={<PoliciesPage />} />
+          <Route path="/evaluations" element={<EvaluationsPage />} />
+          <Route path="/experiments" element={<ExperimentsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<OverviewPage />} />
+        </Routes>
       </main>
     </div>
   );

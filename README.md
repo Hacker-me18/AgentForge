@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="screenshots/overview.png" alt="AgentOS Studio overview" width="880" />
+  <img src="screenshots/overview.png" alt="AgentForge Studio overview" width="880" />
 </p>
 
-<h1 align="center">AgentOS Studio</h1>
+<h1 align="center">AgentForge Studio</h1>
 
 <p align="center">
   An open-source agent runtime, governance and evaluation platform.<br/>
@@ -23,7 +23,7 @@
 
 ## Overview
 
-AgentOS Studio is the infrastructure for running agents that use tools under
+AgentForge Studio is the infrastructure for running agents that use tools under
 governance, with full observability and reproducible offline evaluation. It is
 structured as a set of independently usable `packages/*` modules composed by a
 FastAPI service and by the offline evaluation runner:
