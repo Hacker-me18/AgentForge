@@ -17,16 +17,16 @@
   - [x] 2.5 实现 LLMProvider 接口 + LLMFactory（DeepSeek / OpenAI / OpenAI-compatible / Mock，按 LLM_PROVIDER 配置创建）
   - [x] 2.6 验证：Mock LLM + Mock Tool 端到端跑通；失败重试、预算停止（BUDGET_EXCEEDED）测试通过（8 passed）
 
-- [ ] Task 3: Phase C — Tool Registry / Gateway / MCP
-  - [ ] 3.1 定义 Tool 接口与 Tool Registry（name/description/schema/risk_level/timeout/cost/permission）
-  - [ ] 3.2 实现 Tool Gateway：所有调用经 Gateway 分发
-  - [ ] 3.3 实现 MCP Client 与示例 MCP Server（calculator / search / filesystem / database）
-  - [ ] 3.4 验证：Gateway 调用本地工具与 MCP 工具均成功，事件完整
+- [x] Task 3: Phase C — Tool Registry / Gateway / MCP
+  - [x] 3.1 定义 Tool 接口与 Tool Registry（name/description/schema/risk_level/timeout/cost/permission）
+  - [x] 3.2 实现 Tool Gateway：所有调用经 Gateway 分发
+  - [x] 3.3 实现 MCP Client 与示例 MCP Server（calculator / search / filesystem / database）
+  - [x] 3.4 验证：Gateway 调用本地工具与 MCP 工具均成功，事件完整（19 passed）
 
-- [ ] Task 4: Phase D — Docker Sandbox
-  - [ ] 4.1 实现 SandboxRunner + DockerExecutor（python:3.11，预装 pandas/numpy/matplotlib）
-  - [ ] 4.2 实现 ResourceLimits（network disabled、timeout 30s、512MB、1 CPU、临时文件系统）与 ArtifactCollector
-  - [ ] 4.3 验证：python.execute 成功返回 artifacts；timeout / 内存超限 / 网络禁用 / 非法代码测试通过
+- [x] Task 4: Phase D — Docker Sandbox
+  - [x] 4.1 实现 SandboxRunner + DockerExecutor（python:3.11，预装 pandas/numpy/matplotlib，镜像 agentos-sandbox:0.1）
+  - [x] 4.2 实现 ResourceLimits（network disabled、timeout 30s、512MB、1 CPU、每轮全新临时目录）与 ArtifactCollector
+  - [x] 4.3 验证：python.execute 成功返回 artifacts；timeout / 内存超限 / 网络禁用 / 非法代码测试通过（8 项真实 Docker 测试全绿）
 
 - [ ] Task 5: Phase E — Policy Engine 与审批
   - [ ] 5.1 实现 PolicyEngine：Rule / RiskLevel / ALLOW / DENY / REQUIRE_APPROVAL

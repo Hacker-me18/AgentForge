@@ -2,17 +2,20 @@
 
 All tools are registered via :func:`create_default_registry`. Shell execution
 is CRITICAL risk and effectively disabled by default policy (Phase E will
-enforce it); ``python.execute`` is a local-subprocess placeholder that
-Phase D will replace with Docker sandbox execution.
+enforce it); ``python.execute`` runs inside the Phase D Docker sandbox
+(``agentos-sandbox`` image) with network disabled and resource limits.
 """
 
 import ast
-import asyncio
 import sqlite3
-import sys
 from pathlib import Path
 from typing import Any
 
+from packages.sandbox import (
+    DockerUnavailableError,
+    ResourceLimits,
+    SandboxRunner,
+)
 from packages.tools.base import RiskLevel, ToolMetadata
 from packages.tools.registry.registry import FunctionTool, ToolRegistry
 
@@ -199,33 +202,38 @@ def _shell_execute(arguments: dict, state: Any = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# python.execute: local subprocess placeholder (Phase D -> Docker sandbox)
+# python.execute: Docker sandbox execution (Phase D)
 # ---------------------------------------------------------------------------
 
 
-async def _python_execute(arguments: dict, state: Any = None) -> dict:
-    # Placeholder: runs locally via subprocess. Phase D will replace this
-    # with isolated Docker sandbox execution.
-    code = str(arguments.get("code", ""))
-    timeout = float(arguments.get("timeout", 30))
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-c",
-        code,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-    except TimeoutError:
-        process.kill()
-        await process.wait()
-        return {"stdout": "", "stderr": f"timed out after {timeout}s", "exit_code": -1}
-    return {
-        "stdout": stdout.decode("utf-8", errors="replace"),
-        "stderr": stderr.decode("utf-8", errors="replace"),
-        "exit_code": process.returncode,
-    }
+def _make_python_execute(runner: SandboxRunner):
+    async def _python_execute(arguments: dict, state: Any = None) -> dict:
+        code = str(arguments.get("code", ""))
+        timeout = float(arguments.get("timeout", 30))
+        limits = ResourceLimits(timeout_s=timeout)
+        try:
+            result = await runner.run(code, limits=limits)
+        except DockerUnavailableError as exc:
+            return {
+                "status": "error",
+                "stdout": "",
+                "stderr": f"docker unavailable: {exc}",
+                "artifacts": [],
+                "summary": "docker unavailable",
+            }
+        summary = (
+            f"status={result.status} exit_code={result.exit_code} "
+            f"duration_ms={result.duration_ms:.0f} artifacts={len(result.artifacts)}"
+        )
+        return {
+            "status": result.status,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "artifacts": list(result.artifacts),
+            "summary": summary,
+        }
+
+    return _python_execute
 
 
 # ---------------------------------------------------------------------------
@@ -235,7 +243,7 @@ async def _python_execute(arguments: dict, state: Any = None) -> dict:
 _OBJECT_SCHEMA = {"type": "object", "properties": {}}
 
 
-def create_default_registry() -> ToolRegistry:
+def create_default_registry(sandbox_runner: SandboxRunner | None = None) -> ToolRegistry:
     registry = ToolRegistry()
     registry.register(
         FunctionTool(
@@ -356,8 +364,8 @@ def create_default_registry() -> ToolRegistry:
             ToolMetadata(
                 name="python.execute",
                 description=(
-                    "Execute Python code locally via subprocess "
-                    "(placeholder; Phase D replaces it with a Docker sandbox)."
+                    "Execute Python code inside an isolated Docker sandbox "
+                    "(agentos-sandbox image; network disabled, memory/CPU limited)."
                 ),
                 schema={
                     "type": "object",
@@ -370,7 +378,7 @@ def create_default_registry() -> ToolRegistry:
                 risk_level=RiskLevel.MEDIUM,
                 timeout=35,
             ),
-            _python_execute,
+            _make_python_execute(sandbox_runner or SandboxRunner()),
         )
     )
     return registry

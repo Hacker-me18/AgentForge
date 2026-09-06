@@ -16,15 +16,15 @@
 - [x] LLMFactory 按配置创建 DeepSeek / OpenAI / OpenAI-compatible / Mock provider，切换无需改 Runtime
 
 ## Phase C Tool / MCP
-- [ ] Tool Registry 元数据完整（name/description/schema/risk_level/timeout/cost/permission）
-- [ ] 所有工具调用必经 Tool Gateway（无绕过路径）
-- [ ] MCP Client 可调通示例 MCP Server（calculator/search/filesystem/database）
+- [x] Tool Registry 元数据完整（name/description/schema/risk_level/timeout/cost/permission）
+- [x] 所有工具调用必经 Tool Gateway（无绕过路径）
+- [x] MCP Client 可调通示例 MCP Server（calculator/search/filesystem/database，stdio JSON-RPC 端到端测试通过）
 
 ## Phase D Sandbox
-- [ ] python.execute 在 Docker 中运行，预装 pandas/numpy/matplotlib
-- [ ] 限制生效：network disabled、timeout 30s、512MB、1 CPU、临时文件系统
-- [ ] timeout / 内存超限 / 网络访问 / 非法代码均被拦截并记录
-- [ ] artifacts（图片/json）可收集并返回
+- [x] python.execute 在 Docker 中运行，预装 pandas/numpy/matplotlib（agentos-sandbox:0.1）
+- [x] 限制生效：network disabled、timeout 30s、512MB、1 CPU、每轮全新临时目录（bind-mount，tmpfs 无法回收 artifacts）
+- [x] timeout / 内存超限 / 网络访问 / 非法代码均被拦截并记录
+- [x] artifacts（图片/json）可收集并返回（matplotlib png 测试通过）
 
 ## Phase E Policy
 - [ ] ALLOW / DENY / REQUIRE_APPROVAL 三种动作测试通过
