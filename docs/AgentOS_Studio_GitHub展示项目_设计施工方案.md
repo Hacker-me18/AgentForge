@@ -1,11 +1,7 @@
 # AgentOS Studio
-## 企业级 Agent Runtime & Evaluation Platform
-### GitHub Showcase / Demo Project 设计施工方案
-
-> 面向 GitHub 展示的独立 Agent Infrastructure 作品。
-> 不绑定德福科技、不绑定制造业、不伪装成某公司的真实项目。
+## Agent Runtime & Evaluation Platform
 >
-> 核心目标：做一个“看起来像真实 Agent Infrastructure 产品、能够完整 Demo、架构有深度、代码可快速 Vibe Coding、截图和文档专业”的开源作品。
+> 核心目标：做一个“看起来像真实 Agent Infrastructure 产品、能够完整 Demo、架构有深度、代码可快速 Vibe Coding、截图和文档专业”的。
 >
 > 推荐名称：**AgentOS Studio**
 >
@@ -603,7 +599,7 @@ calculator
 
 # 14. Sandbox
 
-Sandbox 是 GitHub Demo 的视觉亮点。
+Sandbox 是 AgentOS Studio 的视觉亮点。
 
 ```text
 Agent
