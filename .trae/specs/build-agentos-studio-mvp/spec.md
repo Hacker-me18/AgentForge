@@ -2,7 +2,7 @@
 
 ## Why
 
-依据 `docs/AgentOS_Studio_GitHub展示项目_设计施工方案.md`，项目目标不是再做一个业务 Agent，而是构建一个开源的 **Agent Infrastructure / AgentOps 平台**（AgentOS Studio），让 Agent 从"能调用 LLM"变成"可运行、可观察、可评估、可治理"（Build / Run / Trace / Evaluate / Govern），并作为 GitHub 展示作品提供完整 Demo、架构图、截图与一键 Docker Compose 体验。
+依据 `docs/AgentOS_Studio_GitHub展示项目_设计施工方案.md`，项目目标不是再做一个业务 Agent，而是构建一个开源的 **Agent Infrastructure / AgentOps 平台**（AgentOS Studio），让 Agent 从"能调用 LLM"变成"可运行、可观察、可评估、可治理"（Build / Run / Trace / Evaluate / Govern），提供完整 Demo、架构图、截图与一键 Docker Compose 体验。
 
 ## What Changes
 
